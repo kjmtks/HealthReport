@@ -9,7 +9,7 @@
 - メールサーバにIMAP接続できる必要があります。
 
 
-## Quick start
+## Quick start (試してみる用)
 
 1. docker と docker-compose をインストール
 
@@ -53,8 +53,7 @@ make development-down
 make development-remove
 ```
 
-
-## HTTPS環境での実行
+## HTTPSでの実行
 
 docker と docker-compose をインストール後、以下のコマンドを実行してください。
 
