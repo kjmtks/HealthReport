@@ -158,7 +158,7 @@ namespace NCVC.App.Models
                 messages = await inbox.FetchAsync(min_index + 1, -1, MessageSummaryItems.Envelope);
                 count = messages.Count();
                 lastIndex = count > 0 ? messages.Last().Index : -1;
-                foreach (var msg in messages.Where(x => x.Envelope.Subject == mail_subject))
+                foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(mail_subject)))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
                     var received = message.Date.DateTime;
