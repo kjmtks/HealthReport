@@ -156,8 +156,8 @@ namespace NCVC.App.Models
                 inbox.Open(FolderAccess.ReadOnly);
                 IList<IMessageSummary> messages;
                 messages = await inbox.FetchAsync(min_index + 1, -1, MessageSummaryItems.Envelope);
-                lastIndex = messages.Last().Index;
                 count = messages.Count();
+                lastIndex = count > 0 ? messages.Last().Index : -1;
                 foreach (var msg in messages.Where(x => x.Envelope.Subject == mail_subject))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
