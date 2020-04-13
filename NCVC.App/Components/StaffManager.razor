@@ -1,0 +1,264 @@
+﻿@inject IJSRuntime JS;
+@inject DatabaseService DB;
+@inject NotifierService Notifier;
+@inject IConfiguration Config;
+@using System;
+@using System.Collections.Generic;
+@using System.Threading.Tasks;
+@using NCVC.App.Models;
+@using NCVC.App.Services;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+@using Microsoft.Extensions.Configuration;
+@using Microsoft.JSInterop;
+@using Microsoft.EntityFrameworkCore;
+
+
+<div class="@CssClass">
+    <h2 class="ui header">
+        <i class="users icon"></i>
+        <div class="content">
+            スタッフ管理
+        </div>
+    </h2>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="ui negative message">
+            <div class="ui header">@ErrorSubject</div>
+            <p>@ErrorMessage</p>
+        </div>
+    }
+
+    <div class="ui basic segment">
+        <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+            <div class="ui text loader">Please wait...</div>
+        </div>
+
+        <div class="ui menu top attached">
+            <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
+        </div>
+        <table class="ui padded table bottom attached">
+            <thead>
+                <tr>
+                    <th class="single line">アカウント</th>
+                    <th class="single line">名前</th>
+                    <th class="single line">システム管理者</th>
+                    <th class="single line">初期設定</th>
+                    <th class="right aligned"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var model in Collection)
+                {
+                    <tr>
+                        <td>@model.Account</td>
+                        <td>@model.Name</td>
+                        <td>@(model.IsAdmin ? "Yes" : "No")</td>
+                        <td>@(model.IsInitialized ? "済" : "未")</td>
+                        <td class="right aligned">
+                            <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
+                            <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+
+        <div class="ui modal" id="edit-form-@ComponentId">
+            <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
+            <div class="content">
+
+                <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                    <DataAnnotationsValidator />
+                    <div class="ui form">
+                        <div class="field">
+                            <label>アカウント</label>
+                            <InputText @bind-Value="@EdittingModel.Account" />
+                            <ValidationMessage For="@(() => EdittingModel.Account)" />
+                        </div>
+                        @if (!EdittingModel.LdapUser)
+                        {
+                            <div class="field">
+                                <label>パスワード</label>
+                                <InputText type="password" @bind-Value="@EdittingModel.Password" />
+                                <ValidationMessage For="@(() => EdittingModel.Password)" />
+                            </div>
+                        }
+                        <div class="field">
+                            <label>名前</label>
+                            <InputText @bind-Value="@EdittingModel.Name" />
+                            <ValidationMessage For="@(() => EdittingModel.Name)" />
+                        </div>
+                        <div class="field">
+                            <label>システム管理者</label>
+                            <InputCheckbox @bind-Value="@EdittingModel.IsAdmin" />
+                            <ValidationMessage For="@(() => EdittingModel.IsAdmin)" />
+                        </div>
+                        <div class="content">
+                            <div class="actions">
+                                <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
+                                <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+
+@code
+{
+
+        [Parameter]
+        public IEnumerable<Staff> Collection { get; set; }
+        [Parameter]
+        public string CssClass { get; set; }
+
+        public string ErrorSubject { get; set; }
+        public string ErrorMessage { get; set; }
+
+
+        protected int ComponentId;
+        protected Staff EdittingModel { get; set; } = new Staff();
+        private ValidationMessageStore messageStore;
+        protected EditContext EditContext { get; set; }
+        protected EditMode Mode { get; set; } = EditMode.CreateNew;
+        protected Staff BeforeModel = null;
+        protected bool Processing { get; set; }
+        protected enum EditMode { CreateNew, Edit }
+
+
+        public StaffManager()
+        {
+            ComponentId = new Random().Next();
+            ResetEdittingModel();
+        }
+        protected async Task OpenCreate()
+        {
+            EdittingModel = new Staff();
+            Mode = EditMode.CreateNew;
+            ResetEdittingModel();
+            await OpenEditDialog();
+        }
+        protected async Task OpenEdit(Staff beforeModel)
+        {
+            BeforeModel = beforeModel;
+            EdittingModel = beforeModel.GetEntityForEditOrRemove(DB.Context, Config);
+            if (EdittingModel == null)
+            {
+                ErrorSubject = "Error";
+                ErrorMessage = "Not found the entity";
+                return;
+            }
+            Mode = EditMode.Edit;
+            ResetEdittingModel(EdittingModel);
+            await OpenEditDialog();
+        }
+        protected async Task RemoveAsync(Staff model)
+        {
+            if (model == null) { return; }
+            var m = model.GetEntityForEditOrRemove(DB.Context, Config);
+            if (m == null)
+            {
+                ErrorSubject = "Error";
+                ErrorMessage = "Not found the entity";
+                return;
+            }
+            try
+            {
+                m.Remove(DB.Context, Config);
+            }
+            catch (Exception e)
+            {
+                ErrorSubject = e.Message;
+                ErrorMessage = e.StackTrace;
+            }
+            DB.Context.SaveChanges();
+
+            await InvokeAsync(() => StateHasChanged());
+            await InvokeAsync(() => Notifier.Update());
+        }
+        protected virtual async Task OnValidAsync(EditContext editContext)
+        {
+            Processing = true;
+            await InvokeAsync(() => StateHasChanged());
+            await CloseEditDialog();
+            try
+            {
+                if (Mode == EditMode.CreateNew)
+                {
+                    try
+                    {
+                        EdittingModel.CreateNew(DB.Context, Config);
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorSubject = e.Message;
+                        ErrorMessage = e.StackTrace;
+                    }
+                    DB.Context.SaveChanges();
+                }
+                if (Mode == EditMode.Edit)
+                {
+                    var previous = EdittingModel.GetEntityAsNoTracking(DB.Context, Config);
+                    try
+                    {
+                        EdittingModel.Update(DB.Context, Config, previous);
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorSubject = e.Message;
+                        ErrorMessage = e.StackTrace;
+                    }
+                    DB.Context.SaveChanges();
+                }
+                await InvokeAsync(() => StateHasChanged());
+                await InvokeAsync(() => Notifier.Update());
+                Processing = false;
+            }
+            catch (Exception e)
+            {
+                ErrorMessage = e.Message;
+                Processing = false;
+                Console.Error.WriteLine(e);
+                await CloseEditDialog();
+                return;
+            }
+        }
+        protected void AddValidationError(string fieldName, string errorMessage)
+        {
+            messageStore.Add(EditContext.Field(fieldName), errorMessage);
+            EditContext.NotifyValidationStateChanged();
+        }
+        protected async Task Submit()
+        {
+            var v1 = EditContext.Validate();
+            var v2 = Mode == EditMode.CreateNew
+                ? EdittingModel.ServerSideValidationOnCreate(DB.Context, Config, AddValidationError)
+                : EdittingModel.ServerSideValidationOnUpdate(DB.Context, Config, AddValidationError);
+            if (v1 && v2)
+            {
+                await OnValidAsync(EditContext);
+            }
+        }
+
+        private void ResetEdittingModel(Staff model = null)
+        {
+            EditContext = new EditContext(EdittingModel);
+            messageStore = new ValidationMessageStore(EditContext);
+            EditContext.OnValidationRequested += (s, e) => messageStore.Clear();
+            EditContext.OnFieldChanged += (s, e) => messageStore.Clear(e.FieldIdentifier);
+            ErrorMessage = null;
+        }
+
+        public async Task CloseEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#edit-form-{ComponentId}", "hide");
+        public async Task OpenEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#edit-form-{ComponentId}", "show");
+
+    }

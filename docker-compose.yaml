@@ -1,0 +1,49 @@
+version: '3'
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - 8080:8080
+        volumes:
+            - app-data:/data
+        environment:
+            LANG: ja_JP.UTF-8
+            TZ: Asia/Tokyo
+            ASPNETCORE_ENVIRONMENT: Development
+            TITLE: "Health Report"
+            # OVERRIDE: "true"
+
+        networks:
+            - ncvc
+        depends_on:
+            - db
+        cap_add:
+            - SYS_ADMIN
+     
+    db:
+        image: postgres:latest
+        ports:
+            - 5432:5432
+        volumes:
+            - db-data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_USER: ncvc
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: ncvc_development
+            TZ: Asia/Tokyo
+        networks:
+            - ncvc
+
+
+volumes:
+    app-data:
+        driver: local
+    db-data:
+        driver: local
+
+
+networks:
+    ncvc:
+        driver: bridge

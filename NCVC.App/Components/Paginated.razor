@@ -1,0 +1,77 @@
+﻿@typeparam T
+
+@ChildContent
+
+@if (HasPagination)
+{
+    var previous = 0;
+    <div class="ui center pagination menu @CssClass">
+        @foreach (var i in pages)
+        {
+            if (previous + 1 != i)
+            {
+                <div class="disabled item">...</div>
+            }
+            if (i == PageNumber)
+            {
+                <div class="active item">@i</div>
+            }
+            else
+            {
+                <a class="item" @onclick="() => GotoPageAsync(i)">@i</a>
+            }
+            previous = i;
+        }
+    </div>
+}
+
+@code{
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    [Parameter]
+    public IEnumerable<T> Collection { get; set; }
+    [Parameter]
+    public IEnumerable<T> ShowedModels { get; set; }
+    [Parameter]
+    public int PageNumber { get; set; } = 1;
+    [Parameter]
+    public int EntriesPerPage { get; set; } = 10;
+    [Parameter]
+    public string CssClass { get; set; }
+
+    protected IEnumerable<int> pages;
+
+    public bool HasPagination { get { return pages.Count() > 1; } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        await UpdateAsync();
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        await UpdateAsync();
+    }
+
+    public async Task UpdateAsync()
+    {
+        ShowedModels = Collection.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        var cnt = Collection.Count();
+        var total = cnt / EntriesPerPage + (cnt % EntriesPerPage > 0 ? 1 : 0);
+        var head = Enumerable.Range(1, 3);
+        var around = Enumerable.Range(PageNumber - 3, 7);
+        var tail = Enumerable.Range(total - 2, 3);
+        pages = head.Concat(around).Concat(tail).OrderBy(x => x).Where(x => x > 0 && x <= total).Distinct();
+        await InvokeAsync(() => { StateHasChanged(); });
+    }
+
+    protected async Task GotoPageAsync(int i)
+    {
+        PageNumber = i;
+        ShowedModels = Collection.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        await UpdateAsync();
+    }
+}

@@ -1,0 +1,39 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NM;
+
+<div class="ui fixed inverted menu">
+    <div class="ui container">
+        <a class="header item" href="">
+            <i class="home icon"></i>
+            ホーム
+        </a>
+
+        <div class="right menu">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="right menu">
+                        <a class="item" href="EditProfile">
+                            <i class="user icon"></i>
+                            @context.User.Identity.Name
+                        </a>
+                        <a class="item" href="logout">
+                            <i class="sign-out icon"></i>
+                            ログアウト
+                        </a>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="item" href="login">
+                        <i class="sign-in icon"></i>
+                        ログイン
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="ui main text container"> -->
+<div class="ui main">
+    @Body
+</div>

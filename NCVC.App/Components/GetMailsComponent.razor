@@ -1,0 +1,96 @@
+﻿@using NCVC.App.Models;
+@using Microsoft.Extensions.Configuration;
+@using Microsoft.EntityFrameworkCore;
+@inject IJSRuntime JS;
+@inject DatabaseService DB;
+@inject NotifierService Notifier;
+@inject IConfiguration Config;
+@inject AuthenticationStateProvider Auth;
+
+
+<div class="ui basic segment">
+    <button class="ui @(IsAll ? "red" : "primary") @(Processing ? "loading" : "") button" @onclick="UpdateAsync">
+        @(IsAll ? "Check all mail" : "Check new mail")
+    </button>
+    @Message
+</div>
+
+@code{
+    [Parameter]
+    public bool IsAll { get; set; }
+
+    [Parameter]
+    public Course Course { get; set; }
+
+    protected bool Processing { get; set; }
+    protected string Message { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
+        if (lastHistroy == null)
+        {
+            Message = "no histroy";
+        }
+        else
+        {
+            Message = $"最後のチェックは {lastHistroy.OperatedAt.ToString()} に {lastHistroy.Operator?.Name ?? "システム"} によって行われました．";
+        }
+    }
+
+    protected async Task UpdateAsync()
+    {
+        if (!Processing)
+        {
+            Processing = true;
+            Message = "確認中...";
+            await InvokeAsync(() => { StateHasChanged(); });
+            await Task.Run(async () =>
+            {
+                var auth = await Auth.GetAuthenticationStateAsync();
+                var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
+                if (staff == null)
+                {
+                    Message = "許可されないユーザーです．";
+                    return;
+                }
+
+                try
+                {
+                    int index, count;
+                    if (IsAll)
+                    {
+                        (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, Course.ImapMailIndexOffset);
+                    }
+                    else
+                    {
+                        var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
+                        if (lastHistroy == null)
+                        {
+                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, Course.ImapMailIndexOffset);
+                        }
+                        else
+                        {
+                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, lastHistroy.LastIndex);
+                        }
+                    }
+                    if (count > 0)
+                    {
+                        Message = $"データを更新しました．";
+                    }
+                    else
+                    {
+                        Message = $"新着情報はありません．";
+                    }
+                }
+                catch(Exception e)
+                {
+                    Message = $"{e.Message}: {e.StackTrace}";
+                }
+            });
+            Processing = false;
+            await Notifier.Update();
+        }
+    }
+}

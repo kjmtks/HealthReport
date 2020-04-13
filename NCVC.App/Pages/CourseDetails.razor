@@ -1,0 +1,441 @@
+﻿@page "/course/{CourseId}"
+@inject DatabaseService DB;
+@inject AuthenticationStateProvider Auth;
+@using Microsoft.EntityFrameworkCore;
+@using NCVC.App.Components;
+@using NCVC.App.Models;
+@using System.Web;
+@inject AuthenticationStateProvider Auth;
+@inject NotifierService Notifier;
+@implements IDisposable;
+
+<AuthorizeView Roles="Staff">
+    <Authorized>
+        @if (Allowed)
+        {
+            <h2 class="ui header">
+                <i class="list icon"></i>
+                <div class="content">
+                    @Course.Name
+                </div>
+            </h2>
+
+            <div>
+                <GetMailsComponent IsAll="false" Course="Course" />
+            </div>
+
+            <div class="ui basic segment">
+                <div class="ui menu top attached">
+                    <a class="item" @onclick='() => { FilterString = ""; Filter(""); }'>絞り込みリセット</a>
+                    <a class="item" @onclick='SetOnlyError'>異常のみ</a>
+                    <a class="item" @onclick='() => { SetTemp(37); }'>体温37.0℃以上</a>
+                    <a class="item" @onclick='() => { SetTemp(37.5); }'>体温37.5℃以上</a>
+                    <a class="item" @onclick='SetYesterday'>昨日</a>
+                    <a class="item" @onclick='SetToday'>今日</a>
+                    <a class="item" @onclick='SetLastWeek'>前週</a>
+                    <a class="item" @onclick='SetThisWeek'>今週</a>
+                    <a class="item" @onclick='SetLastMonth'>前月</a>
+                    <a class="item" @onclick='SetThisMonth'>今月</a>
+                    <div class="right menu">
+                        <div class="item" style="width: 50em">
+                            <div class="ui transparent icon input">
+                                <i class="filter link icon" @onclick="()=> { Filter(FilterString); }"></i>
+                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
+                            </div>
+                        </div>
+                        <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i>CSV</a>
+                    </div>
+                </div>
+                <Paginated Collection="@HealthList" @ref="@Pagination" CssClass="attached" EntriesPerPage="100">
+                    <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
+                        <thead>
+                            <tr>
+                                <th class="single line">
+                                    <a href="javascript:void(0);" @onclick="SetOderDescDate"><i class="angle up icon"></i></a>
+                                    日付
+                                    <a href="javascript:void(0);" @onclick="SetOderDate"><i class="angle down icon"></i></a>
+                                </th>
+                                <th colspan="2" class="single line">
+                                    <a href="javascript:void(0);" @onclick="SetOderDescStudent"><i class="angle up icon"></i></a>
+                                    学生
+                                    <a href="javascript:void(0);" @onclick="SetOderStudent"><i class="angle down icon"></i></a>
+                                </th>
+                                <th class="single line">体温</th>
+                                <th class="single line">せき</th>
+                                <th class="single line">息苦しさ</th>
+                                <th class="single line">鼻水</th>
+                                <th class="single line">のどの痛み</th>
+                                <th class="single line">体のだるさ</th>
+                                <th class="single line">下痢</th>
+                                <th class="single line">頭痛</th>
+                                <th class="single line">その他風邪症状</th>
+                                <th class="single line">その他症状詳細</th>
+                                <th class="single line">解熱剤・せき止め薬・かぜ薬等の服用</th>
+                                <th class="single line">検査実施</th>
+                                <th class="single line">検査結果</th>
+                                <th class="single line">提出日</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var health in Pagination.ShowedModels)
+                            {
+                                <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : ""))">
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
+                                    <td>@health.Student.Name</td>
+
+                                    <td>
+                                        @if (health.IsWrongBodyTemperature())
+                                        { <i class="attention icon"></i> }
+                                        else if (health.IsWarnBodyTemperature())
+                                        { <i class="exclamation triangle icon"></i> }
+                                        @health.BodyTemperature
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn1())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn1
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn2())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn2
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn3())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn3
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn4())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn4
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn5())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn5
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn6())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn6
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn7())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn7
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn8())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn8
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn9())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn9
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn10())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn10
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn11())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn11
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn12())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn12
+                                    </td>
+                                    <td>@health.UploadedAt.ToString()</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </Paginated>
+            </div>
+
+            <AuthorizeView Roles="Admin" Context="adminContext">
+                <GetMailsComponent IsAll="true" Course="Course" />
+            </AuthorizeView>
+
+
+            <div class="ui basic segment">
+                <div class="ui menu top attached">
+                    <span class="item">未提出の学生 (@(ussDate.ToShortDateString()))</span>
+                    <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
+                    <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
+                    <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
+                </div>
+                <table class="ui very compact table bottom attached">
+                    <thead>
+                        <tr>
+                            <th colspan="2" class="single line">
+                                学生
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Health.UnsubmittedStudents(DB.Context, id, ussDate))
+                        {
+                            <tr>
+                                <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
+                                <td>@s.Name</td>
+                            </tr>
+                        }
+                        @foreach (var a in Health.UnregisteredAccounts(DB.Context, id))
+                        {
+                            <tr>
+                                <td>@a</td>
+                                <td>未登録</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+
+
+
+@code
+{
+    [Parameter]
+    public string CourseId { get; set; }
+    protected int id { get; set; }
+
+    protected DateTime ussDate { get; set; } = DateTime.Today;
+
+    protected Paginated<Health> Pagination;
+
+    protected Course Course { get; set; }
+    protected IEnumerable<Health> HealthList { get; set; }
+    protected string FilterString = "";
+    protected bool Loaded = false;
+    protected bool Allowed = false;
+    protected override async Task OnInitializedAsync()
+    {
+        Loaded = false;
+        Notifier.Notify += OnNotify;
+        await Update();
+
+    }
+
+    public async Task OnNotify()
+    {
+        await Update();
+        await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+    }
+
+
+    protected async Task Update()
+    {
+        id = int.Parse(CourseId);
+        var auth = await Auth.GetAuthenticationStateAsync();
+
+        var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
+        if (staff != null)
+        {
+            var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
+            Course = DB.Context.Courses.AsNoTracking().ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name))).FirstOrDefault();
+            if (Course != null)
+            {
+                Allowed = true;
+
+                var today = DateTime.Today;
+                var condition = $"date=={today.Year}/{today.Month}/{today.Day}";
+                var order = "student";
+                SetConditionAndOrder(condition, order);
+                HealthList = Health.Search(DB.Context, id, FilterString);
+                //HealthList = DB.Context.HealthList.Include(x => x.Student).Where(x => x.CourseId == id).OrderBy(x => x.MeasuredAt);
+            }
+        }
+    }
+
+    protected string GetCsvFileUrl(string filterString)
+    {
+        string str = HttpUtility.UrlEncode(filterString);
+        return $"course/{Course.Id}/report.csv?filterString={str}";
+    }
+
+    protected (string, string) GetConditionAndOrder()
+    {
+        string condition = "", order = "";
+        if (FilterString.Contains("order by"))
+        {
+            var str = FilterString.Split("order by");
+            if (str.Count() == 2)
+            {
+                order = str[0];
+            }
+            if (str.Count() >= 2)
+            {
+                condition = str[0];
+                order = str[1];
+            }
+        }
+        else
+        {
+            condition = FilterString;
+        }
+        return (condition, order);
+    }
+    protected void SetConditionAndOrder(string condition, string order)
+    {
+        if (string.IsNullOrWhiteSpace(order))
+        {
+            FilterString = $"{condition.Trim()}";
+        }
+        else
+        {
+            FilterString = $"{condition.Trim()} order by {order.Trim()}";
+        }
+    }
+
+    protected void SetOderStudent()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
+        order = $"{order} student";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetOderDescStudent()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
+        order = $"{order} ~student";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+
+    protected void SetOderDate()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        order = $"{order} date";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetOderDescDate()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        order = $"{order} ~date";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+
+    protected void SetTemp(double temp)
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("temp")).Select(x => x.Trim()));
+        condition = $"{condition} temp>={temp}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetStudent(Student student)
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
+        condition = $"{condition} student=={student.Account}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetDate(DateTime date)
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        condition = $"{condition} date=={date.Year}/{date.Month}/{date.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetOnlyError()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
+        condition = $"{condition} error==true";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetYesterday()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var yesterday = DateTime.Today.AddDays(-1);
+        condition = $"{condition} date=={yesterday.Year}/{yesterday.Month}/{yesterday.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetToday()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var today = DateTime.Today;
+        condition = $"{condition} date=={today.Year}/{today.Month}/{today.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetLastWeek()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var day = DateTime.Today.AddDays(-7);
+        int diff = (7 + (day.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var start = day.AddDays(-1 * diff).Date;
+        var end = start.AddDays(6);
+        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<={end.Year}/{end.Month}/{end.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetThisWeek()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var today = DateTime.Today;
+        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var start = today.AddDays(-1 * diff).Date;
+        var end = start.AddDays(6);
+        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<={end.Year}/{end.Month}/{end.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetLastMonth()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var today = DateTime.Today;
+        var month = new DateTime(today.Year, today.Month, 1);
+        var start = month.AddMonths(-1);
+        var end = month;
+        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<{end.Year}/{end.Month}/{end.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetThisMonth()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        var today = DateTime.Today;
+        var start = new DateTime(today.Year, today.Month, 1);
+        var end = start.AddMonths(1);
+        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<{end.Year}/{end.Month}/{end.Day}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+
+    protected void Filter(string filterString)
+    {
+        HealthList = Health.Search(DB.Context, Course.Id, filterString);
+    }
+
+}

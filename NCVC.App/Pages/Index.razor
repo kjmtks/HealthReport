@@ -1,0 +1,55 @@
+﻿@page "/"
+@inject DatabaseService DB;
+@inject AuthenticationStateProvider Auth;
+@using Microsoft.EntityFrameworkCore;
+@using NCVC.App.Components;
+@using NCVC.App.Models;
+@inject NotifierService Notifier;
+@implements IDisposable;
+
+<h1 class="ui center aligned header">
+    <i class="fas fa-heartbeat"></i>
+    @(Environment.GetEnvironmentVariable("TITLE"))
+</h1>
+
+
+<br />
+<br />
+<br />
+<br />
+
+<AuthorizeView Roles="Staff">
+    <Authorized>
+        <CourseManager CssClass="ui content" IsAdmin='context.User.IsInRole("Admin")' />
+    </Authorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="Admin">
+    <StaffManager CssClass="ui content" Collection="DB.Context.Staffs" />
+    <StudentsManager CssClass="ui content" />
+</AuthorizeView>
+
+@code
+{
+    protected bool Loaded = false;
+
+
+    protected override void OnInitialized()
+    {
+        Loaded = false;
+        base.OnInitialized();
+
+        Notifier.Notify += OnNotify;
+        Loaded = true;
+    }
+
+
+    public async Task OnNotify()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+    }
+}

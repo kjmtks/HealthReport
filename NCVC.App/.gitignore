@@ -1,0 +1,9 @@
+
+Models/SeedData.cs
+
+bin
+etc
+obj
+node_modules
+*.csproj.user
+.DS_Store

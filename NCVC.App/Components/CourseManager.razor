@@ -1,0 +1,352 @@
+﻿@using NCVC.App.Models;
+@using Microsoft.Extensions.Configuration;
+@using Microsoft.EntityFrameworkCore;
+@inject AuthenticationStateProvider Auth;
+@inject IJSRuntime JS;
+@inject DatabaseService DB;
+@inject IConfiguration Config;
+@inject NotifierService Notifier;
+@implements IDisposable;
+
+
+    <div class="@CssClass">
+        <h2 class="ui header">
+            <i class="list icon"></i>
+            <div class="content">
+                コース
+            </div>
+        </h2>
+        <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
+
+        <div class="ui basic segment">
+            <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+                <div class="ui text loader">Please wait...</div>
+            </div>
+            @if (IsAdmin)
+            {
+                <div class="ui menu top attached">
+                    <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
+                </div>
+            }
+            <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
+                <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
+                    <thead>
+                        <tr>
+                            <th class="single line">名前</th>
+                            <th class="single line">受付メールアドレス</th>
+                            <th class="single line">受付メールサブジェクト</th>
+                            <th class="single line">IMAP暗号化方式</th>
+                            <th class="single line">学生数</th>
+                            @if (IsAdmin)
+                            {
+                                <th class="single line"></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var model in Pagination.ShowedModels)
+                        {
+                        <tr>
+                            <td><a href="course/@model.Id">@model.Name</a></td>
+                            <td>@model.EmailAddress</td>
+                            <td>@model.ImapMailSubject</td>
+                            <td>@model.SecurityMode</td>
+                            <td>@model.AssignedStudentAccounts().Count()</td>
+                            @if (IsAdmin)
+                            {
+                                <td class="right aligned">
+                                    <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
+                                    <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
+                                </td>
+                            }
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </Paginated>
+        </div>
+
+
+
+        <div class="ui modal" id="edit-form-@ComponentId">
+            <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
+            <div class="content">
+
+                <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                    <DataAnnotationsValidator />
+                    <div class="ui form">
+                        <div class="field">
+                            <label>名前</label>
+                            <InputText @bind-Value="@EdittingModel.Name" />
+                            <ValidationMessage For="@(() => EdittingModel.Name)" />
+                        </div>
+                        <div class="field">
+                            <label>受付メールアドレス</label>
+                            <InputText @bind-Value="@EdittingModel.EmailAddress" />
+                            <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
+                        </div>
+                        <div class="field">
+                            <label>受付メールサブジェクト</label>
+                            <InputText @bind-Value="@EdittingModel.ImapMailSubject" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapMailSubject)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP ホスト</label>
+                            <InputText @bind-Value="@EdittingModel.ImapHost" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP ポート</label>
+                            <InputNumber @bind-Value="@EdittingModel.ImapPort" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP暗号化方式</label>
+                            <select class="ui fluid dropdown" @bind="securityMode">
+                                @if (EdittingModel.SecurityMode == "auto")
+                                {
+                                    <option value="auto" selected>auto</option>
+                                }
+                                else
+                                {
+                                    <option value="auto">auto</option>
+                                }
+                                @if (EdittingModel.SecurityMode == "ssl")
+                                {
+                                    <option value="ssl" selected>ssl</option>
+                                }
+                                else
+                                {
+                                    <option value="ssl">ssl</option>
+                                }
+                                @if (EdittingModel.SecurityMode == "none")
+                                {
+                                    <option value="none" selected>none</option>
+                                }
+                                else
+                                {
+                                    <option value="none">none</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP アカウント</label>
+                            <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP パスワード</label>
+                            <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
+                        </div>
+                        <div class="field">
+                            <label>スタッフリスト</label>
+                            このコースに所属させるスタッフのアカウントを半角スペースまたは改行区切りで記述してください.
+                            <InputTextArea @bind-Value="@EdittingModel.StaffAccounts" />
+                            <ValidationMessage For="@(() => EdittingModel.StaffAccounts)" />
+                        </div>
+                        <div class="field">
+                            <label>所属学生リスト</label>
+                            このコースに所属させる学生のアカウントを半角スペースまたは改行区切りで記述してください.
+                            <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
+                            <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
+                        </div>
+
+                        <div class="content">
+                            <div class="actions">
+                                <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
+                                <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+
+
+
+    </div>
+
+@code{
+    [Parameter]
+    public string CssClass { get; set; }
+
+    public IEnumerable<Course> Collection { get; set; } = new Course[] { };
+
+    protected int ComponentId;
+    protected bool Processing { get; set; }
+    protected string ErrorMessage { get; set; }
+    protected string ErrorSubject { get; set; }
+    protected string securityMode;
+
+    protected Paginated<Course> Pagination;
+
+    [Parameter]
+    public bool IsAdmin { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Notifier.Notify += OnNotify;
+        await Update();
+    }
+    protected async Task Update()
+    {
+        var auth = await Auth.GetAuthenticationStateAsync();
+        var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
+        Collection = DB.Context.Courses.OrderBy(x => x.Name).ToArray().Where(x => IsAdmin || isTestMode || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name)) ?? new Course[] { };
+    }
+    public async Task OnNotify()
+    {
+        await Update();
+        await InvokeAsync(StateHasChanged);
+    }
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+    }
+
+
+
+    protected Course EdittingModel { get; set; } = new Course();
+    private ValidationMessageStore messageStore;
+    protected EditContext EditContext { get; set; }
+    protected EditMode Mode { get; set; } = EditMode.CreateNew;
+    protected Course BeforeModel = null;
+    protected enum EditMode { CreateNew, Edit }
+
+
+    public CourseManager()
+    {
+        ComponentId = new Random().Next();
+        ResetEdittingModel();
+    }
+    protected async Task OpenCreate()
+    {
+        EdittingModel = new Course();
+        Mode = EditMode.CreateNew;
+        ResetEdittingModel();
+        await OpenEditDialog();
+    }
+    protected async Task OpenEdit(Course beforeModel)
+    {
+        BeforeModel = beforeModel;
+        EdittingModel = beforeModel.GetEntityForEditOrRemove(DB.Context, Config);
+        if (EdittingModel == null)
+        {
+            ErrorSubject = "Error";
+            ErrorMessage = "Not found the entity";
+            return;
+        }
+        securityMode = EdittingModel.SecurityMode;
+        Mode = EditMode.Edit;
+        ResetEdittingModel(EdittingModel);
+        await OpenEditDialog();
+    }
+    protected async Task RemoveAsync(Course model)
+    {
+        if (model == null) { return; }
+        var m = model.GetEntityForEditOrRemove(DB.Context, Config);
+        if (m == null)
+        {
+            ErrorSubject = "Error";
+            ErrorMessage = "Not found the entity";
+            return;
+        }
+        try
+        {
+            m.Remove(DB.Context, Config);
+        }
+        catch (Exception e)
+        {
+            ErrorSubject = e.Message;
+            ErrorMessage = e.StackTrace;
+        }
+        DB.Context.SaveChanges();
+
+        await InvokeAsync(() => StateHasChanged());
+        await InvokeAsync(() => Notifier.Update());
+    }
+    protected virtual async Task OnValidAsync(EditContext editContext)
+    {
+        Processing = true;
+        await InvokeAsync(() => StateHasChanged());
+        await CloseEditDialog();
+        try
+        {
+            if (Mode == EditMode.CreateNew)
+            {
+                try
+                {
+                    EdittingModel.SecurityMode = securityMode;
+                    EdittingModel.CreateNew(DB.Context, Config);
+                }
+                catch (Exception e)
+                {
+                    ErrorSubject = e.Message;
+                    ErrorMessage = e.StackTrace;
+                }
+                DB.Context.SaveChanges();
+            }
+            if (Mode == EditMode.Edit)
+            {
+                var previous = EdittingModel.GetEntityAsNoTracking(DB.Context, Config);
+                try
+                {
+                    EdittingModel.SecurityMode = securityMode;
+                    EdittingModel.Update(DB.Context, Config, previous);
+                }
+                catch (Exception e)
+                {
+                    ErrorSubject = e.Message;
+                    ErrorMessage = e.StackTrace;
+                }
+                DB.Context.SaveChanges();
+            }
+            await InvokeAsync(() => StateHasChanged());
+            await InvokeAsync(() => Notifier.Update());
+            Processing = false;
+        }
+        catch (Exception e)
+        {
+            ErrorMessage = e.Message;
+            Processing = false;
+            Console.Error.WriteLine(e);
+            await CloseEditDialog();
+            return;
+        }
+    }
+    protected void AddValidationError(string fieldName, string errorMessage)
+    {
+        messageStore.Add(EditContext.Field(fieldName), errorMessage);
+        EditContext.NotifyValidationStateChanged();
+    }
+    protected async Task Submit()
+    {
+        var v1 = EditContext.Validate();
+        var v2 = Mode == EditMode.CreateNew
+            ? EdittingModel.ServerSideValidationOnCreate(DB.Context, Config, AddValidationError)
+            : EdittingModel.ServerSideValidationOnUpdate(DB.Context, Config, AddValidationError);
+        if (v1 && v2)
+        {
+            await OnValidAsync(EditContext);
+        }
+    }
+
+    private void ResetEdittingModel(Course model = null)
+    {
+        EditContext = new EditContext(EdittingModel);
+        messageStore = new ValidationMessageStore(EditContext);
+        EditContext.OnValidationRequested += (s, e) => messageStore.Clear();
+        EditContext.OnFieldChanged += (s, e) => messageStore.Clear(e.FieldIdentifier);
+        ErrorMessage = null;
+    }
+
+    public async Task CloseEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#edit-form-{ComponentId}", "hide");
+    public async Task OpenEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#edit-form-{ComponentId}", "show");
+
+
+
+
+}

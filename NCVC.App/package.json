@@ -1,0 +1,9 @@
+{
+  "name": "NCVC.app",
+  "version": "0.7.0",
+  "description": "",
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.12.1",
+    "semantic-ui-css": "^2.4.1"
+  }
+}

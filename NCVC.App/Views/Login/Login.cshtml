@@ -1,0 +1,96 @@
+﻿@model NCVC.App.ViewModels.LoginViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - @(Environment.GetEnvironmentVariable("TITLE"))</title>
+    <base href="~/" />
+
+    <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="node_modules/@@fortawesome/fontawesome-free/css/all.min.css">
+    <link href="css/site.css" rel="stylesheet" />
+
+    <script src="node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="js/site.js"></script>
+    <script src="node_modules/semantic-ui-css/semantic.min.js"></script>
+    <script src="node_modules/@@fortawesome/fontawesome-free/js/all.min.js"></script>
+
+
+    <style type="text/css">
+        .ui.main {
+            margin-top: 6em;
+            margin-bottom: 3em;
+            margin-left: 3em;
+            margin-right: 3em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a class="header item" href="">
+                <i class="home icon"></i>
+                Home
+            </a>
+        </div>
+    </div>
+
+
+    <div class="ui main">
+        <div class="ui compact segment">
+
+            <h1 class="header">ログイン</h1>
+            
+            @if(!string.IsNullOrWhiteSpace(ViewBag.Notice))
+            {
+                <p>@ViewBag.Notice</p>
+            }
+
+            @using (Html.BeginForm())
+            {
+
+                <div class="ui form">
+                    <div class="field">
+                        <div class="ui big left icon input">
+                            @Html.TextBoxFor(h => h.Name, new { @class = "", @placeholder = "account" })
+                            <i class="user icon"></i>
+                        </div>
+                        @Html.ValidationMessageFor(h => h.Name)
+                    </div>
+                    <div class="field">
+                        <div class="ui big left icon input">
+                            @Html.PasswordFor(h => h.Password, new { @class = "", @placeholder = "password" })
+                            <i class="key icon"></i>
+                        </div>
+                        @Html.ValidationMessageFor(h => h.Password)
+                    </div>
+                    <div class="field">
+                        <div class="ui toggle checkbox">
+                            @Html.CheckBoxFor(h => h.RememberMe, new { @class = "" })
+                            <label>Remenmber me</label>
+                        </div>
+                        @Html.ValidationMessageFor(h => h.RememberMe)
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="actions">
+                        <button type="submit" class="ui green inverted button"><i class="sign-in icon"></i>ログイン</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+
+
+
+</body>
+</html>
+
+
+
+
+

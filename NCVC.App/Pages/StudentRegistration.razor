@@ -1,0 +1,178 @@
+﻿@page "/StudentRegistration"
+@inject IJSRuntime JS;
+@inject DatabaseService DB;
+@inject NotifierService Notifier;
+@inject IConfiguration Config;
+@inject AuthenticationStateProvider Auth;
+@using System;
+@using System.Collections.Generic;
+@using System.Threading.Tasks;
+@using NCVC.App.Models;
+@using NCVC.App.Services;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Components.Forms;
+@using Microsoft.Extensions.Configuration;
+@using Microsoft.JSInterop;
+@using Microsoft.EntityFrameworkCore;
+
+
+<AuthorizeView Context="AuhtContext">
+    <Authorized>
+        <div class="ui content">
+            <h2 class="ui header">
+                <i class="user icon"></i>
+                <div class="content">
+                    学生情報の登録・編集
+                </div>
+            </h2>
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <div class="ui negative message">
+                    <div class="ui header">@ErrorSubject</div>
+                    <p>@ErrorMessage</p>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(NoticeMessage))
+            {
+                <div class="ui positive message">
+                    <div class="ui header">@NoticeSubject</div>
+                    <p>@((MarkupString)NoticeMessage)</p>
+                </div>
+            }
+
+            <div class="ui compact basic segment">
+                <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+                    <div class="ui text loader">Please wait...</div>
+                </div>
+
+
+                <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                    <DataAnnotationsValidator />
+                    <div class="ui form">
+                        <div class="field">
+                            <label>アカウント</label>
+                            <div>@EdittingModel.Account</div>
+                        </div>
+                        <div class="field">
+                            <label>名前</label>
+                            <div>@EdittingModel.Name</div>
+                        </div>
+                        <div class="field">
+                            <label>報告者ID</label>
+                            アプリ送信時に表示される「報告者ID」を入力してください
+                            <InputText @bind-Value="@EdittingModel.NewHash" />
+                            <ValidationMessage For="@(() => EdittingModel.NewHash)" />
+                        </div>
+                    </div>
+
+                    <div class="content">
+                        <div class="actions">
+                            <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                        </div>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+
+    [Parameter]
+    public string CssClass { get; set; }
+
+    public bool Processing { get; set; }
+    public string ErrorSubject { get; set; }
+    public string ErrorMessage { get; set; }
+    public string NoticeSubject { get; set; }
+    public string NoticeMessage { get; set; }
+
+    protected Student EdittingModel { get; set; } = new Student();
+    private ValidationMessageStore messageStore;
+    protected EditContext EditContext { get; set; }
+    protected Student BeforeModel = null;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        var auth = await Auth.GetAuthenticationStateAsync();
+        BeforeModel = DB.Context.Students.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
+        EdittingModel = BeforeModel.GetEntityForEditOrRemove(DB.Context, Config);
+        
+        EdittingModel.NewHash = EdittingModel.Hash;
+
+        if (EdittingModel == null)
+        {
+            ErrorSubject = "エラー";
+            ErrorMessage = "学生が見つかりません．";
+            return;
+        }
+        ResetEdittingModel(EdittingModel);
+    }
+
+    protected virtual async Task OnValidAsync(EditContext editContext)
+    {
+        Processing = true;
+        NoticeSubject = "";
+        NoticeMessage = "";
+        ErrorSubject = "";
+        ErrorMessage = "";
+        await InvokeAsync(() => StateHasChanged());
+        try
+        {
+            var previous = EdittingModel.GetEntityAsNoTracking(DB.Context, Config);
+            EdittingModel.Hash = EdittingModel.NewHash;
+            try
+            {
+                DB.Context.Update(EdittingModel);
+            }
+            catch (Exception e)
+            {
+                ErrorSubject = e.Message;
+                ErrorMessage = e.StackTrace;
+            }
+            DB.Context.SaveChanges();
+            await InvokeAsync(() => StateHasChanged());
+            await InvokeAsync(() => Notifier.Update());
+            NoticeSubject = "設定に成功しました";
+            NoticeMessage = "ログアウトしてください．";
+            Processing = false;
+        }
+        catch (Exception e)
+        {
+            ErrorMessage = e.Message;
+            Processing = false;
+            Console.Error.WriteLine(e);
+            return;
+        }
+    }
+    protected void AddValidationError(string fieldName, string errorMessage)
+    {
+        messageStore.Add(EditContext.Field(fieldName), errorMessage);
+        EditContext.NotifyValidationStateChanged();
+    }
+    protected async Task Submit()
+    {
+        var v1 = EditContext.Validate();
+        var v2 = EdittingModel.ServerSideValidationOnUpdate(DB.Context, Config, AddValidationError);
+        if (v1 && v2)
+        {
+            await OnValidAsync(EditContext);
+        }
+    }
+
+    private void ResetEdittingModel(Student model = null)
+    {
+        EditContext = new EditContext(EdittingModel);
+        messageStore = new ValidationMessageStore(EditContext);
+        EditContext.OnValidationRequested += (s, e) => messageStore.Clear();
+        EditContext.OnFieldChanged += (s, e) => messageStore.Clear(e.FieldIdentifier);
+        ErrorMessage = null;
+    }
+
+}

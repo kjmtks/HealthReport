@@ -1,0 +1,207 @@
+﻿@inject DatabaseService DB;
+@inject AuthenticationStateProvider Auth;
+@using Microsoft.EntityFrameworkCore;
+@using NCVC.App.Components;
+@using NCVC.App.Models;
+
+    <div class="@CssClass">
+        <h2 class="ui header">
+            <i class="users icon"></i>
+            <div class="content">
+                学生管理
+            </div>
+        </h2>
+
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <div class="ui positive message">
+                <div class="ui header">@Subject</div>
+                <p>@Message</p>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="ui negative message">
+                <div class="ui header">@ErrorSubject</div>
+                <p>@ErrorMessage</p>
+            </div>
+        }
+
+        <div class="ui menu top attached">
+            <div class="item">登録済み 学生</div>
+        </div>
+        <Paginated Collection="@Students" @ref="@Pagination" CssClass="attached" EntriesPerPage="50">
+            <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
+                <thead>
+                    <tr>
+                        <th class="single line">学生番号</th>
+                        <th class="single line">名前</th>
+                        <th class="single line">報告者ID</th>
+                        <th class="single line"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Pagination.ShowedModels)
+                    {
+                    <tr>
+                        <td>
+                            @student.Account
+                        </td>
+                        <td>
+                            @student.Name
+                        </td>
+                        <td>
+                            @student.Hash
+                        </td>
+                        <td class="right aligned">
+                            <a class="ui red icon button" @onclick="() => RemoveAsync(student)"><i class="trash icon"></i></a>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </Paginated>
+
+        <h3>登録・更新</h3>
+
+        <p>
+            追加または更新する学生の情報を以下の様式に従って1行につき1名ずつ記述してください．
+            @if (useLdap)
+            {
+                <pre>学生番号 報告者ID LDAP</pre>
+                <text>または</text>
+            }
+            <pre>学生番号 報告者ID 名前</pre>
+            @if (useLdap)
+            {
+                <text>前者の方法では，学生の名前をLDAPから取得します．</text>
+            }
+        </p>
+        <div class="ui form">
+            <div class="field">
+                <textarea class="ui" @bind="List" rows="20"></textarea>
+
+            </div>
+            <div class="actions">
+                <button @onclick="Update" type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+            </div>
+        </div>
+    </div>
+
+@code
+{
+    [Parameter]
+    public string CssClass { get; set; }
+    protected bool Loaded = false;
+    protected Paginated<Student> Pagination;
+    protected IEnumerable<Student> Students = new Student[] { };
+    private string ErrorMessage;
+    private string ErrorSubject;
+    private string Message;
+    private string Subject;
+    private string List;
+    private bool useLdap;
+
+    protected override void OnInitialized()
+    {
+        Loaded = false;
+        base.OnInitialized();
+        Students = DB.Context.Students.OrderBy(x => x.Account);
+        useLdap = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_ACCOUNT"));
+        Loaded = true;
+    }
+
+    protected void Update()
+    {
+        Message = "";
+        Subject = "";
+        ErrorMessage = "";
+        ErrorSubject = "";
+        StateHasChanged();
+        try
+        {
+            var previous = DB.Context.Students.ToArray();
+
+            var saccount = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_ACCOUNT");
+            var spassword = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_PASSWORD");
+            foreach (var entry in List.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(new string[] { " ", "\t" }, 3, StringSplitOptions.RemoveEmptyEntries)))
+            {
+                if (entry.Count() >= 3)
+                {
+                    var account = entry[0].Trim();
+                    var hash = entry[1].Trim();
+                    var name = entry[2].Trim();
+                    if (useLdap && name.ToLower() == "ldap")
+                    {
+                        name = Student.FindStudentNameByLdap(account, saccount, spassword);
+                        if (name == null)
+                        {
+                            Message += $"Who {account}?;";
+                            StateHasChanged();
+                            continue;
+                        }
+                    }
+
+                    var existedStudent = previous.Where(x => x.Account == account).FirstOrDefault();
+                    if (existedStudent == null)
+                    {
+                        var newStudent = new Student()
+                        {
+                            Account = account,
+                            Hash = hash,
+                            Name = name
+                        };
+                        DB.Context.Students.Add(newStudent);
+                        Message += $"Add {account};";
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        existedStudent.Name = name;
+                        existedStudent.Hash = hash;
+                        DB.Context.Students.Update(existedStudent);
+                        Message += $"Update {account}({name});";
+                        StateHasChanged();
+                    }
+                }
+            }
+            DB.Context.SaveChanges();
+            StateHasChanged();
+        }
+        catch (Exception e)
+        {
+            ErrorSubject = e.Message;
+            ErrorMessage = e.StackTrace;
+            if (e.InnerException != null)
+            {
+                ErrorMessage += Environment.NewLine + e.InnerException.StackTrace;
+            }
+        }
+        List = "";
+    }
+
+    protected async Task RemoveAsync(Student model)
+    {
+        if (model == null) { return; }
+        var m = DB.Context.Students.Where(x => x.Id == model.Id).FirstOrDefault();
+        if (m == null)
+        {
+            ErrorSubject = "Error";
+            ErrorMessage = "Not found the entity";
+            return;
+        }
+        try
+        {
+            DB.Context.Remove(m);
+        }
+        catch (Exception e)
+        {
+            ErrorSubject = e.Message;
+            ErrorMessage = e.StackTrace;
+        }
+        DB.Context.SaveChanges();
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+}
