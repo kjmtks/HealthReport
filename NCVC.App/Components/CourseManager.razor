@@ -225,6 +225,7 @@
     protected async Task OpenCreate()
     {
         EdittingModel = new Course();
+        EdittingModel.ImapMailSubject = "健康フォローアップ用健康観察データの報告";
         Mode = EditMode.CreateNew;
         ResetEdittingModel();
         await OpenEditDialog();
