@@ -103,6 +103,9 @@ $ make production-down
 ### HTTPでの実行
 
 `docker-compose.production.yaml` を修正することで，HTTPで実行することもできます．
+証明書等は不要です．
+ローカルネットワークで運用し，利用者を限定できる場合はHTTPで問題ないと思います．
+
 
 ---
 
