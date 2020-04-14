@@ -104,3 +104,5 @@ $ make production-down
 ## 開発環境
 
 - C#
+- .NET Core 3.0
+- Blazor
