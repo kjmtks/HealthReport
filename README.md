@@ -146,7 +146,7 @@ $ make production-down
 | LDAP_ID_ATTR | uid | (LDAPを使用する場合) アカウントを示す属性 |
 | LDAP_MAIL_ATTR | mail | (LDAPを使用する場合) メールアドレスを示す属性 (省略可) |
 | LDAP_NAME_ATTR | displayName;lang-ja | (LDAPを使用する場合) 名前を示す属性 (省略可) |
-| LDAP_SEARCH_USER_USER | user1 | LDAPで管理対象者を一括登録する機能を使用する場合の，ユーザー検索を行うアカウント |
+| LDAP_SEARCH_USER_ACCOUNT | user1 | LDAPで管理対象者を一括登録する機能を使用する場合の，ユーザー検索を行うアカウント |
 | LDAP_SEARCH_USER_PASSWORD | your-password | 上記アカウントのパスワード |
 
 ## 開発環境
