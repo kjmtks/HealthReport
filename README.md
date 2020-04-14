@@ -138,17 +138,17 @@ $ make production-down
 
 |変数名   |例       | 説明    |
 |--------|---------|--------|
-| TITLE | Health Report | タイトル |
-| SUBDIR | /subdir | サブディレクトリで動作させる場合に指定． |
-| LDAP_REGEX_STAFF | ^c0000[0-9]{5}$$ | (LDAPを使用する場合) ログインしたユーザーがスタッフであることを判定するための，アカウントに対する正規表現 |
-| LDAP_HOST | ldap1.foo.jp | (LDAPを使用する場合) LDAPホスト |
-| LDAP_PORT | 636 | (LDAPを使用する場合) LDAPのポート番号 |
-| LDAP_BASE | dc=foo,dc=jp | (LDAPを使用する場合) ベースDN |
-| LDAP_ID_ATTR | uid | (LDAPを使用する場合) アカウントを示す属性 |
-| LDAP_MAIL_ATTR | mail | (LDAPを使用する場合) メールアドレスを示す属性 (省略可) |
-| LDAP_NAME_ATTR | displayName;lang-ja | (LDAPを使用する場合) 名前を示す属性 (省略可) |
-| LDAP_SEARCH_USER_ACCOUNT | user1 | LDAPで管理対象者を一括登録する機能を使用する場合の，ユーザー検索を行うアカウント |
-| LDAP_SEARCH_USER_PASSWORD | user1-password | 上記アカウントのパスワード |
+| `TITLE` | `Health Report` | タイトル |
+| `SUBDIR` | `/subdir` | サブディレクトリで動作させる場合に指定． |
+| `LDAP_REGEX_STAFF` | `^c0000[0-9]{5}$$` | (LDAPを使用する場合) ログインしたユーザーがスタッフであることを判定するための，アカウントに対する正規表現 |
+| `LDAP_HOST` | `ldap1.foo.jp` | (LDAPを使用する場合) LDAPホスト |
+| `LDAP_PORT` | `636` | (LDAPを使用する場合) LDAPのポート番号 |
+| `LDAP_BASE` | `dc=foo,dc=jp` | (LDAPを使用する場合) ベースDN |
+| `LDAP_ID_ATTR` | `uid` | (LDAPを使用する場合) アカウントを示す属性 |
+| `LDAP_MAIL_ATTR` | `mail` | (LDAPを使用する場合) メールアドレスを示す属性 (省略可) |
+| `LDAP_NAME_ATTR` | `displayName;lang-ja` | (LDAPを使用する場合) 名前を示す属性 |
+| `LDAP_SEARCH_USER_ACCOUNT` | `user1` | LDAPで管理対象者を一括登録する機能を使用する場合の，ユーザー検索を行うアカウント |
+| `LDAP_SEARCH_USER_PASSWORD` | `user1-password` | 上記アカウントのパスワード |
 
 ## 開発環境
 
