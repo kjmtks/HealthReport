@@ -131,6 +131,8 @@ $ make production-down
 
 ---
 
+## 環境変数
+
 `docker-compose*.yaml` で以下の環境変数を設定することでシステムの振る舞いを調整できます:
 
 |変数名   |例       | 説明    |
