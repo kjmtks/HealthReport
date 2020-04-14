@@ -11,7 +11,12 @@
 
 ## Quick start (試してみる用)
 
+動作を確認するためにシステムを起動する手順を説明します．
+
 1. docker と docker-compose をインストール
+
+* [Docker](https://docs.docker.com/get-docker/)
+* [docker-compose](https://docs.docker.com/compose/install/)
 
 2. ソースコードの入手
 
