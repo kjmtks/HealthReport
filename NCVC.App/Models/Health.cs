@@ -122,10 +122,10 @@ namespace NCVC.App.Models
                         case (string errorStr, "==", "error"): if (bool.TryParse(errorStr, out bool error3)) HealthList = HealthList.Where(x => x.HasWrongValue() == error3); break;
                         case (string errorStr, "!=", "error"): if (bool.TryParse(errorStr, out bool error4)) HealthList = HealthList.Where(x => x.HasWrongValue() != error4); break;
 
-                        case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account == student); break;
-                        case ("student", "!=", string student): HealthList = HealthList.Where(x => x.Student.Account != student); break;
-                        case (string student, "==", "student"): HealthList = HealthList.Where(x => x.Student.Account == student); break;
-                        case (string student, "!=", "student"): HealthList = HealthList.Where(x => x.Student.Account != student); break;
+                        case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
+                        case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
+                        case (string student, "==", "student"): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
+                        case (string student, "!=", "student"): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
 
                         case ("date", "==", string dateStr): if (DateTime.TryParse(dateStr, out var date1)) HealthList = HealthList.Where(x => x.MeasuredAt == date1); break;
                         case ("date", "!=", string dateStr): if (DateTime.TryParse(dateStr, out var date2)) HealthList = HealthList.Where(x => x.MeasuredAt != date2); break;
