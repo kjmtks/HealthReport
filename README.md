@@ -53,27 +53,51 @@ make development-down
 make development-remove
 ```
 
-## HTTPSでの実行
+---
+
+## 本番環境での実行
+
+### HTTPSでの実行
 
 docker と docker-compose をインストール後、以下のコマンドを実行してください。
+
+1. ソースの入手と設定
 
 ```
 $ git clonet https://github.com/kjmtks/HealthReport.git
 $ cd HealthReport
 $ vim docker-compose.production.default.yaml
 (or $ vim docker-compose.production.override.yaml)
+```
+
+2. サーバー証明書の準備
+
+```
 $ make pfx KEY=your-key-file.key CER=your-cert-file.cer
 $ cp your-ca-file.cer certs/
+```
+
+`your-key-file.key`, `your-cert-file.cer`, `your-ca-file.cer` はそれぞれ秘密鍵, 証明書, 中間証明書であるとします．
+
+3. 起動
+
+```
 $ make production-up
 ```
 
-then, open `https://localhost` (or `https://yourhost`) in your browser.
+しばらくしてから， `https://localhost` (or `https://yourhost`) にアクセスして下さい．
 
-### Stop
+4. 停止
+
+以下のコマンドで停止することができます．
 
 ```
 $ make production-down
 ```
+
+### HTTPでの実行
+
+`docker-compose.production.yaml` を修正することで，HTTPで実行することもできます．
 
 ---
 
