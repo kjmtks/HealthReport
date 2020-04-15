@@ -22,7 +22,7 @@ Windowsを使用する場合は WSL で操作を行って下さい．
 2. ソースコードの入手
 
 ```
-git clonet https://github.com/kjmtks/HealthReport.git
+git clone https://github.com/kjmtks/HealthReport.git
 cd HealthReport
 ```
 
@@ -70,7 +70,7 @@ docker と docker-compose をインストール後、以下のコマンドを実
 1. ソースの入手と設定
 
 ```
-$ git clonet https://github.com/kjmtks/HealthReport.git
+$ git clone https://github.com/kjmtks/HealthReport.git
 $ cd HealthReport
 $ vim docker-compose.production.default.yaml
 (or $ vim docker-compose.production.override.yaml)
