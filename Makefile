@@ -32,7 +32,7 @@ else
 	docker-compose down
 	docker-compose down
 endif
-	docker volume rm ncvc_db-data ncvc_app-data
+	docker volume rm healthreport_db-data healthreport_app-data
 
 development-down:
 ifeq (${DEVELOPMENT_OVERRIDE_FILE}, $(shell ls | grep ${DEVELOPMENT_OVERRIDE_FILE}))
