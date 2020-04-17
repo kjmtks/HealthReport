@@ -15,6 +15,7 @@ namespace NCVC.App.Models
         public string RawUserName { get; set; }
         public DateTime MeasuredAt { get; set; }
         public DateTime UploadedAt { get; set; }
+        public string TimeFrame { get; set; }
 
         public decimal BodyTemperature { get; set; }
         public string StringColumn1 { get; set; }

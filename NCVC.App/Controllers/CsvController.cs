@@ -52,6 +52,10 @@ namespace NCVC.App.Controllers
                     w.Write("アカウント,");
                     w.Write("名前,");
                     w.Write("日付,");
+                    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                    {
+                        w.Write("時間帯,");
+                    }
                     w.Write("体温,");
                     w.Write("せき,");
                     w.Write("息苦しさ,");
@@ -71,6 +75,10 @@ namespace NCVC.App.Controllers
                         w.Write($"{health.Student.Account},");
                         w.Write($"{health.Student.Name},");
                         w.Write($"{health.MeasuredAt.ToShortDateString()},");
+                        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                        {
+                            w.Write($"{health.TimeFrame},");
+                        }
                         w.Write($"{health.BodyTemperature},");
                         w.Write($"{health.StringColumn1},");
                         w.Write($"{health.StringColumn2},");

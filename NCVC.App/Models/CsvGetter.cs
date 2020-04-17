@@ -21,6 +21,25 @@ namespace NCVC.App.Models
             var registeredStudentAccounts = course.AssignedStudentAccounts();
             var canOverride = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OVERRIDE"));
 
+            IEnumerable<(string, TimeSpan, TimeSpan)> timeFrames;
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+            {
+                timeFrames = null;
+            }
+            else
+            {
+                timeFrames = Environment.GetEnvironmentVariable("TIMEFRAME").Split(";", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())
+                    .Select(x =>
+                    {
+                        var xs = x.Split(" ", 2).Select(x => x.Trim()).ToArray();
+                        var name = xs[0];
+                        xs = xs[1].Split("-").Select(x => x.Trim()).ToArray();
+                        TimeSpan.TryParse(xs[0], out var start);
+                        TimeSpan.TryParse(xs[1], out var end);
+                        return (name, start, end);
+                    });
+            }
+
             bool flag = false;
             var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, course.ImapMailSubject, lastIndex, course.SecurityMode);
             foreach (var (rowList, received, idx) in data)
@@ -56,7 +75,11 @@ namespace NCVC.App.Models
                 student.LastUploadedAt = received;
                 context.Update(student);
                 context.SaveChanges();
-                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date).FirstOrDefault();
+
+                var ts = new TimeSpan(received.Hour, received.Minute, received.Second);
+                var timeFrame = timeFrames?.Where(frame => frame.Item2 <= ts && ts <= frame.Item3)?.Select(frame => frame.Item1)?.FirstOrDefault() ?? "";
+
+                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && x.TimeFrame == timeFrame).FirstOrDefault();
                 var existed = health != null;
                 if (!existed)
                 {
@@ -68,6 +91,7 @@ namespace NCVC.App.Models
                         UploadedAt = received,
                         Student = student,
                         MailIndex = idx,
+                        TimeFrame = timeFrame
                     };
                 }
                 else if(canOverride)
@@ -76,6 +100,7 @@ namespace NCVC.App.Models
                     health.RawUserName = name;
                     health.MeasuredAt = date;
                     health.UploadedAt = received;
+                    health.TimeFrame = timeFrame;
                     health.Student = student;
                     health.MailIndex = idx;
                 }
