@@ -112,7 +112,14 @@ $ make production-down
 
 ## 利用方法
 
+
+### 管理者
+
 1. 「登録・更新」より観察対象者の情報を入力してください。（スペースまたはタブ区切り）
+
+LDAPの設定をすることで，本システムで対象者の情報を収集することができますが，
+Google Forms などを使用して収集することもできます．
+フォームのテンプレートは [こちら](https://docs.google.com/forms/d/1HdGAWrvjN7U2wMmpLs40T5Dbam6fGCpDBYuDxY-9ocw/edit)．
 
 2. 「コース」の「＋」ボタンよりメールサーバの情報を新規追加する
 
