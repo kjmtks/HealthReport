@@ -51,20 +51,22 @@
                         <thead>
                             <tr>
                                 <th class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOderDescDate"><i class="angle up icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDescDate"><i class="angle up icon"></i></a>
                                     日付
-                                    <a href="javascript:void(0);" @onclick="SetOderDate"><i class="angle down icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDate"><i class="angle down icon"></i></a>
                                 </th>
                                 @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                 {
                                     <th class="single line">
+                                        <a href="javascript:void(0);" @onclick="SetOrderDescTimeFrame"><i class="angle up icon"></i></a>
                                         時間帯
+                                        <a href="javascript:void(0);" @onclick="SetOrderTimeFrame"><i class="angle down icon"></i></a>
                                     </th>
                                 }
                                 <th colspan="2" class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOderDescStudent"><i class="angle up icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDescStudent"><i class="angle up icon"></i></a>
                                     学生
-                                    <a href="javascript:void(0);" @onclick="SetOderStudent"><i class="angle down icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderStudent"><i class="angle down icon"></i></a>
                                 </th>
                                 <th class="single line">体温</th>
                                 <th class="single line">せき</th>
@@ -89,7 +91,7 @@
                                 <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
                                 @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                 {
-                                    <td>@health.TimeFrame</td>
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
                                 }
                                 <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
                                 <td>@health.Student.Name</td>
@@ -311,7 +313,7 @@
         }
     }
 
-    protected void SetOderStudent()
+    protected void SetOrderStudent()
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
@@ -319,7 +321,7 @@
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
-    protected void SetOderDescStudent()
+    protected void SetOrderDescStudent()
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
@@ -328,7 +330,24 @@
         Filter(FilterString);
     }
 
-    protected void SetOderDate()
+    protected void SetOrderTimeFrame()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
+        order = $"{order} timeframe";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetOrderDescTimeFrame()
+    {
+        var (condition, order) = GetConditionAndOrder();
+        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
+        order = $"{order} ~timeframe";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+
+    protected void SetOrderDate()
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
@@ -336,7 +355,7 @@
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
-    protected void SetOderDescDate()
+    protected void SetOrderDescDate()
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
@@ -358,6 +377,14 @@
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
         condition = $"{condition} student=={student.Account}";
+        SetConditionAndOrder(condition, order);
+        Filter(FilterString);
+    }
+    protected void SetTimeFrame(string timeFrame)
+    {
+        var (condition, order) = GetConditionAndOrder();
+        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
+        condition = $"{condition} timeframe=={timeFrame}";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }

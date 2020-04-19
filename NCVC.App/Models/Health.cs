@@ -110,7 +110,7 @@ namespace NCVC.App.Models
                 condition = filterString;
             }
             IEnumerable<Health> HealthList = context.HealthList.Include(x => x.Student).OrderBy(x => x.MeasuredAt).AsNoTracking();
-            var parser = new Regex("^(?<lhs>[a-zA-Z0-9./]+)(?<comp>(==|!=|<=|>=|<|>))(?<rhs>[a-zA-Z0-9./]+)$");
+            var parser = new Regex("^(?<lhs>[a-zA-Z0-9./]+)(?<comp>(==|!=|<=|>=|<|>))(?<rhs>[^>=<!\\s]+)$");
             var matches = condition.Split(" ").Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => parser.Match(x)).Where(x => x.Success);
             foreach (var match in matches)
             {
@@ -127,6 +127,11 @@ namespace NCVC.App.Models
                         case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
                         case (string student, "==", "student"): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
                         case (string student, "!=", "student"): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
+
+                        case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
+                        case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
+                        case (string timeframe, "==", "timeframe"): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
+                        case (string timeframe, "!=", "timeframe"): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
 
                         case ("date", "==", string dateStr): if (DateTime.TryParse(dateStr, out var date1)) HealthList = HealthList.Where(x => x.MeasuredAt == date1); break;
                         case ("date", "!=", string dateStr): if (DateTime.TryParse(dateStr, out var date2)) HealthList = HealthList.Where(x => x.MeasuredAt != date2); break;
@@ -162,6 +167,7 @@ namespace NCVC.App.Models
             {
                 bool firstSort = true;
                 IOrderedEnumerable<Health> OrderedHealthList = null;
+
                 foreach (var match in order.Split(" ").Select(x => Regex.Match(x, "^((?<asc>[a-zA-Z0-9]+)|~(?<dsc>[a-zA-Z0-9]+))$")).Where(x => x.Success))
                 {
                     if (match.Groups.ContainsKey("asc") && match.Groups["asc"].Success && !string.IsNullOrWhiteSpace(match.Groups["asc"].Value))
@@ -169,6 +175,7 @@ namespace NCVC.App.Models
                         if (firstSort)
                         {
                             if (match.Groups["asc"].Value == "student") OrderedHealthList = HealthList.OrderBy(x => x.Student.Account);
+                            if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = HealthList.OrderBy(x => x.TimeFrame);
                             if (match.Groups["asc"].Value == "date") OrderedHealthList = HealthList.OrderBy(x => x.MeasuredAt);
                             if (match.Groups["asc"].Value == "temp") OrderedHealthList = HealthList.OrderBy(x => x.BodyTemperature);
                             if (match.Groups["asc"].Value == "error") OrderedHealthList = HealthList.OrderBy(x => x.HasWrongValue());
@@ -176,6 +183,7 @@ namespace NCVC.App.Models
                         else
                         {
                             if (match.Groups["asc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenBy(x => x.Student.Account);
+                            if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenBy(x => x.TimeFrame);
                             if (match.Groups["asc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenBy(x => x.MeasuredAt);
                             if (match.Groups["asc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenBy(x => x.BodyTemperature);
                             if (match.Groups["asc"].Value == "error") OrderedHealthList = OrderedHealthList.ThenBy(x => x.HasWrongValue());
@@ -187,6 +195,7 @@ namespace NCVC.App.Models
                         if (firstSort)
                         {
                             if (match.Groups["dsc"].Value == "student") OrderedHealthList = HealthList.OrderByDescending(x => x.Student.Account);
+                            if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = HealthList.OrderByDescending(x => x.TimeFrame);
                             if (match.Groups["dsc"].Value == "date") OrderedHealthList = HealthList.OrderByDescending(x => x.MeasuredAt);
                             if (match.Groups["dsc"].Value == "temp") OrderedHealthList = HealthList.OrderByDescending(x => x.BodyTemperature);
                             if (match.Groups["dsc"].Value == "error") OrderedHealthList = HealthList.OrderByDescending(x => x.HasWrongValue());
@@ -194,6 +203,7 @@ namespace NCVC.App.Models
                         else
                         {
                             if (match.Groups["dsc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.Student.Account);
+                            if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.TimeFrame);
                             if (match.Groups["dsc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.MeasuredAt);
                             if (match.Groups["dsc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.BodyTemperature);
                             if (match.Groups["dsc"].Value == "error") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.HasWrongValue());
