@@ -1,10 +1,12 @@
 ﻿@model NCVC.App.ViewModels.LoginViewModel
+@inject NCVC.App.Services.EnvironmentVariableService EV
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - @(Environment.GetEnvironmentVariable("TITLE"))</title>
+    <title>Login - @EV.GetTitle()</title>
     <base href="~/" />
 
     <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-css/semantic.min.css">
@@ -42,8 +44,8 @@
         <div class="ui compact segment">
 
             <h1 class="header">ログイン</h1>
-            
-            @if(!string.IsNullOrWhiteSpace(ViewBag.Notice))
+
+            @if (!string.IsNullOrWhiteSpace(ViewBag.Notice))
             {
                 <p>@ViewBag.Notice</p>
             }

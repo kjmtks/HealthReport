@@ -1,13 +1,14 @@
 ﻿@page "/{**path}"
 @namespace NCVC.App.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject NCVC.App.Services.EnvironmentVariableService EV
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(Environment.GetEnvironmentVariable("TITLE"))</title>
+    <title>@EV.GetTitle()</title>
     <base href="~/" />
 
     <link rel="stylesheet" type="text/css" href="node_modules/semantic-ui-css/semantic.min.css">

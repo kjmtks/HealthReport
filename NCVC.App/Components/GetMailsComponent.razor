@@ -6,6 +6,7 @@
 @inject NotifierService Notifier;
 @inject IConfiguration Config;
 @inject AuthenticationStateProvider Auth;
+@inject EnvironmentVariableService EV;
 
 
 <div class="ui basic segment">
@@ -61,18 +62,18 @@
                     int index, count;
                     if (IsAll)
                     {
-                        (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, Course.ImapMailIndexOffset);
+                        (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, Course.ImapMailIndexOffset);
                     }
                     else
                     {
                         var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
                         if (lastHistroy == null)
                         {
-                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, Course.ImapMailIndexOffset);
+                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, Course.ImapMailIndexOffset);
                         }
                         else
                         {
-                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, Course, staff, lastHistroy.LastIndex);
+                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, lastHistroy.LastIndex);
                         }
                     }
                     if (count > 0)
@@ -84,7 +85,7 @@
                         Message = $"新着情報はありません．";
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Message = $"{e.Message}: {e.StackTrace}";
                 }

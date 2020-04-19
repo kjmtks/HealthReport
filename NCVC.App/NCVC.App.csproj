@@ -28,6 +28,5 @@
   <ItemGroup>
     <Folder Include="Migrations\" />
     <Folder Include="out\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 </Project>

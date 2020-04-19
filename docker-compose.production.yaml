@@ -16,13 +16,13 @@ services:
             ASPNETCORE_Kestrel__Certificates__Default__Password: password
             ASPNETCORE_Kestrel__Certificates__Default__Path: /server.pfx
             TITLE: "Health Report"
+            TIMEFRAME: "午前 00:00:00-11:59:59; 午後 12:00:00-23:59:59"
             # SUBDIR: "/ncvc"
             # LDAP_REGEX_STAFF: ^c0000[0-9]{5}$
             # LDAP_HOST: uni-ldap1.db.tokushima-u.ac.jp
             # LDAP_PORT: 636
             # LDAP_BASE: dc=tokushima-u,dc=ac,dc=jp
             # LDAP_ID_ATTR: uid
-            # LDAP_MAIL_ATTR: mail
             # LDAP_NAME_ATTR: displayName;lang-ja
         networks:
             - ncvc

@@ -14,15 +14,15 @@ namespace NCVC.App.Models
         private int port;
         private string basestr;
         private string id;
-        private Func<LdapEntry, (string, string)> getEmailAndName;
+        private Func<LdapEntry, string> getName;
 
-        public LdapAuthenticator(string host, int port, string basestr, string id, Func<LdapEntry, (string, string)> getEmailAndName)
+        public LdapAuthenticator(string host, int port, string basestr, string id, Func<LdapEntry, string> getName)
         {
             this.host = host;
             this.port = port;
             this.basestr = basestr;
             this.id = id;
-            this.getEmailAndName = getEmailAndName;
+            this.getName = getName;
         }
 
         public string FindName(string account, string search_user_account, string search_user_password)
@@ -37,8 +37,7 @@ namespace NCVC.App.Models
                 var dn = string.Format("{0}={1},{2}", this.id, account, this.basestr);
                 lc.Bind(LdapConnection.Ldap_V3, string.Format("{0}={1},{2}", this.id, search_user_account, this.basestr), search_user_password);
 
-                var (name, email) = getEmailAndName(lc.Read(dn));
-                return name;
+                return getName(lc.Read(dn));
             }
             catch
             {
@@ -47,7 +46,7 @@ namespace NCVC.App.Models
         }
 
 
-        public (bool, string, string) Authenticate(string account, string password)
+        public (bool, string) Authenticate(string account, string password)
         {
             var lc = new LdapConnection();
             lc.UserDefinedServerCertValidationDelegate += (sender, certificate, chain, sslPolicyErrors) => true;  // Ignore cert. error
@@ -58,23 +57,11 @@ namespace NCVC.App.Models
                 lc.Connect(this.host, this.port);
                 var dn = string.Format("{0}={1},{2}", this.id, account, this.basestr);
                 lc.Bind(LdapConnection.Ldap_V3, dn, password);
-                var (email, name) = getEmailAndName(lc.Read(dn));
-                return (true, email, name);
+                return (true, getName(lc.Read(dn)));
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                /*
-                Console.Error.WriteLine(e.Message);
-                Console.Error.WriteLine(e.StackTrace);
-                Exception ex = e.InnerException;
-                while (ex != null)
-                {
-                    Console.Error.WriteLine(ex.Message);
-                    Console.Error.WriteLine(ex.StackTrace);
-                    ex = ex.InnerException;
-                }
-                */
-                return (false, null, null);
+                return (false, null);
             }
             finally
             {

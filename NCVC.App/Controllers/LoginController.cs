@@ -99,7 +99,7 @@ namespace NCVC.App.Controllers
             var claims = new List<Claim>();
             ClaimsIdentity claimsIdentity;
 
-            var (result, name, email) = Student.LdapAuthenticate(account, password);
+            var (result, name) = Student.LdapAuthenticate(account, password);
             if (!result)
             {
                 return LocalRedirect($"{pathBase}/Login");
@@ -135,7 +135,7 @@ namespace NCVC.App.Controllers
             var claims = new List<Claim>();
             ClaimsIdentity claimsIdentity;
 
-            var (result, name, email) = Student.LdapAuthenticate(account, password);
+            var (result, name) = Student.LdapAuthenticate(account, password);
             if (!result)
             {
                 return LocalRedirect($"{pathBase}/Login");

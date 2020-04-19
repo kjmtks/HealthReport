@@ -11,34 +11,19 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using MailKit.Security;
 
+using NCVC.App.Services;
+
 namespace NCVC.App.Models
 {
     public class CsvGetter
     {
-        public static async Task<(int, int)> LoadReceivedCsv(DatabaseContext context, Course course, Staff operaotr, int lastIndex)
+        public static async Task<(int, int)> LoadReceivedCsv(DatabaseContext context, EnvironmentVariableService ev, Course course, Staff operaotr, int lastIndex)
         {
             course = context.Courses.Where(x => x.Id == course.Id).FirstOrDefault();
             var registeredStudentAccounts = course.AssignedStudentAccounts();
-            var canOverride = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OVERRIDE"));
+            var canOverride = ev.IsOverrideMode();
 
-            IEnumerable<(string, TimeSpan, TimeSpan)> timeFrames;
-            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
-            {
-                timeFrames = null;
-            }
-            else
-            {
-                timeFrames = Environment.GetEnvironmentVariable("TIMEFRAME").Split(";", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim())
-                    .Select(x =>
-                    {
-                        var xs = x.Split(" ", 2).Select(x => x.Trim()).ToArray();
-                        var name = xs[0];
-                        xs = xs[1].Split("-").Select(x => x.Trim()).ToArray();
-                        TimeSpan.TryParse(xs[0], out var start);
-                        TimeSpan.TryParse(xs[1], out var end);
-                        return (name, start, end);
-                    });
-            }
+            var timeFrames = ev.GetTimeFrames();
 
             bool flag = false;
             var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, course.ImapMailSubject, lastIndex, course.SecurityMode);
@@ -78,17 +63,17 @@ namespace NCVC.App.Models
 
                 var now = DateTime.Now;
                 var ts = new TimeSpan(received.Hour, received.Minute, received.Second);
-                string timeFrame;
+                string timeFrameName;
                 if(now.Year == date.Year && now.Month == date.Month && now.Day == date.Day)
                 {
-                    timeFrame = timeFrames?.Where(frame => frame.Item2 <= ts && ts <= frame.Item3)?.Select(frame => frame.Item1)?.FirstOrDefault() ?? "";
+                    timeFrameName = timeFrames?.Where(frame => frame.IsIn(received))?.FirstOrDefault()?.Name ?? "";
                 }
                 else
                 {
-                    timeFrame = timeFrames?.Select(frame => frame.Item1)?.LastOrDefault() ?? "";
+                    timeFrameName = timeFrames?.LastOrDefault().Name ?? "";
                 }
 
-                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && x.TimeFrame == timeFrame).FirstOrDefault();
+                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && x.TimeFrame == timeFrameName).FirstOrDefault();
                 var existed = health != null;
                 if (!existed)
                 {
@@ -100,7 +85,7 @@ namespace NCVC.App.Models
                         UploadedAt = received,
                         Student = student,
                         MailIndex = idx,
-                        TimeFrame = timeFrame
+                        TimeFrame = timeFrameName
                     };
                 }
                 else if(canOverride)
@@ -109,7 +94,7 @@ namespace NCVC.App.Models
                     health.RawUserName = name;
                     health.MeasuredAt = date;
                     health.UploadedAt = received;
-                    health.TimeFrame = timeFrame;
+                    health.TimeFrame = timeFrameName;
                     health.Student = student;
                     health.MailIndex = idx;
                 }

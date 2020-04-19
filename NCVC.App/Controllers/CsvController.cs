@@ -17,9 +17,11 @@ namespace NCVC.App.Controllers
     public class CsvController : Controller
     {
         DatabaseService DB;
-        public CsvController(DatabaseService db)
+        EnvironmentVariableService EV;
+        public CsvController(DatabaseService db, EnvironmentVariableService ev)
         {
             DB = db;
+            EV = ev;
         }
 
         [HttpGet("course/{courseId}/report.csv")]
@@ -47,12 +49,15 @@ namespace NCVC.App.Controllers
             using (var ms = new MemoryStream())
             {
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+                var hasTimeFrames = EV.GetTimeFrames().Count() > 0;
+
                 using (var w = new StreamWriter(ms, Encoding.GetEncoding("Shift_JIS")))
                 {
                     w.Write("アカウント,");
                     w.Write("名前,");
                     w.Write("日付,");
-                    if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                    if (hasTimeFrames)
                     {
                         w.Write("時間帯,");
                     }
@@ -75,7 +80,7 @@ namespace NCVC.App.Controllers
                         w.Write($"{health.Student.Account},");
                         w.Write($"{health.Student.Name},");
                         w.Write($"{health.MeasuredAt.ToShortDateString()},");
-                        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                        if (hasTimeFrames)
                         {
                             w.Write($"{health.TimeFrame},");
                         }

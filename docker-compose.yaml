@@ -12,8 +12,8 @@ services:
             LANG: ja_JP.UTF-8
             TZ: Asia/Tokyo
             ASPNETCORE_ENVIRONMENT: Development
-            TITLE: "Health Report"
-            # OVERRIDE: "true"
+            TITLE: "Health Report (development)"
+            TIMEFRAME: "午前 00:00:00-11:59:59; 午後 12:00:00-23:59:59"
 
         networks:
             - ncvc

@@ -119,13 +119,12 @@ namespace NCVC.App.Models
         [Required, StringLength(6, MinimumLength = 5)]
         public string NewHash { get; set; }
 
-        public static (bool, string, string) LdapAuthenticate(string account, string password)
+        public static (bool, string) LdapAuthenticate(string account, string password)
         {
             var ldap_host = Environment.GetEnvironmentVariable("LDAP_HOST");
             var ldap_port = int.Parse(Environment.GetEnvironmentVariable("LDAP_PORT"));
             var ldap_base = Environment.GetEnvironmentVariable("LDAP_BASE");
             var ldap_id_attr = Environment.GetEnvironmentVariable("LDAP_ID_ATTR");
-            var ldap_mail_attr = Environment.GetEnvironmentVariable("LDAP_MAIL_ATTR");
             var ldap_name_attr = Environment.GetEnvironmentVariable("LDAP_NAME_ATTR");
             var authenticator = new LdapAuthenticator(ldap_host, ldap_port, ldap_base, ldap_id_attr, entry => {
                 foreach(LdapAttribute a in entry.getAttributeSet())
@@ -133,18 +132,15 @@ namespace NCVC.App.Models
                     Console.WriteLine($"{a.Name}: {a.StringValue}");
                 }
                 var attrs = entry.getAttributeSet();
-                var email = attrs.getAttribute(ldap_mail_attr).StringValue;
                 var xs = ldap_name_attr.Split(";");
-                string name = null;
                 if (xs.Length == 1)
                 {
-                    name = attrs.getAttribute(xs[0]).StringValue;
+                    return attrs.getAttribute(xs[0]).StringValue;
                 }
                 else
                 {
-                    name = attrs.getAttribute(xs[0], xs[1]).StringValue;
+                    return attrs.getAttribute(xs[0], xs[1]).StringValue;
                 }
-                return (name, email);
             });
             return authenticator.Authenticate(account, password);
         }
@@ -155,7 +151,6 @@ namespace NCVC.App.Models
             var ldap_port = int.Parse(Environment.GetEnvironmentVariable("LDAP_PORT"));
             var ldap_base = Environment.GetEnvironmentVariable("LDAP_BASE");
             var ldap_id_attr = Environment.GetEnvironmentVariable("LDAP_ID_ATTR");
-            var ldap_mail_attr = Environment.GetEnvironmentVariable("LDAP_MAIL_ATTR");
             var ldap_name_attr = Environment.GetEnvironmentVariable("LDAP_NAME_ATTR");
 
 
@@ -165,18 +160,15 @@ namespace NCVC.App.Models
                     Console.WriteLine($"{a.Name}: {a.StringValue}");
                 }
                 var attrs = entry.getAttributeSet();
-                var email = attrs.getAttribute(ldap_mail_attr).StringValue;
                 var xs = ldap_name_attr.Split(";");
-                string name = null;
                 if (xs.Length == 1)
                 {
-                    name = attrs.getAttribute(xs[0]).StringValue;
+                    return attrs.getAttribute(xs[0]).StringValue;
                 }
                 else
                 {
-                    name = attrs.getAttribute(xs[0], xs[1]).StringValue;
+                    return attrs.getAttribute(xs[0], xs[1]).StringValue;
                 }
-                return (name, email);
             });
             return authenticator.FindName(account, search_user_account, search_user_password);
         }
