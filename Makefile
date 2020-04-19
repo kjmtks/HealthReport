@@ -21,8 +21,13 @@ ifeq (${PRODUCTION_OVERRIDE_FILE}, $(shell ls | grep ${PRODUCTION_OVERRIDE_FILE}
 
 else
 	docker-compose -f docker-compose.production.yaml -f ${PRODUCTION_DEFAULT_FILE} build
-	docker-compose -f docker-compose.production.yaml -f ${PRODUCTION_DEFAULT_FILE} up
+	docker-compose -f docker-compose.production.yaml -f ${PRODUCTION_DEFAULT_FILE} up -d
 endif
+
+production-http-up:
+	docker-compose -f docker-compose.production.http.yaml build
+	docker-compose -f docker-compose.production.http.yaml up -d
+
 
 development-remove:
 ifeq (${DEVELOPMENT_OVERRIDE_FILE}, $(shell ls | grep ${DEVELOPMENT_OVERRIDE_FILE}))
@@ -33,6 +38,7 @@ else
 	docker-compose down
 endif
 	docker volume rm healthreport_db-data healthreport_app-data
+
 
 development-down:
 ifeq (${DEVELOPMENT_OVERRIDE_FILE}, $(shell ls | grep ${DEVELOPMENT_OVERRIDE_FILE}))
@@ -51,6 +57,13 @@ else
 	docker-compose -f docker-compose.production.yaml -f ${PRODUCTION_DEFAULT_FILE} down
 	docker-compose -f docker-compose.production.yaml -f ${PRODUCTION_DEFAULT_FILE} down
 endif
+
+production-http-down:
+	docker-compose -f docker-compose.production.http.yaml down
+	docker-compose -f docker-compose.production.http.yaml down
+
+
+
 
 pfx:
 	openssl pkcs12 -export -out ./keys/server.pfx -inkey ${KEY} -in ${CER}

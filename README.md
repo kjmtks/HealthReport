@@ -107,6 +107,32 @@ $ make production-down
 証明書等は不要です．
 ローカルネットワークで運用し，本システム利用者（管理者）を限定できる場合はHTTPで問題ないと思います．
 
+docker と docker-compose をインストール後、以下のコマンドを実行してください。
+
+1. ソースの入手と設定
+
+```
+$ git clone https://github.com/kjmtks/HealthReport.git
+$ cd HealthReport
+$ vim docker-compose.production.default.yaml
+(or $ vim docker-compose.production.override.yaml)
+```
+
+2. 起動
+
+```
+$ make production-http-up
+```
+
+しばらくしてから， `http://localhost` (or `https://yourhost`) にアクセスして下さい．
+
+3. 停止
+
+以下のコマンドで停止することができます．
+
+```
+$ make production-http-down
+```
 
 ---
 

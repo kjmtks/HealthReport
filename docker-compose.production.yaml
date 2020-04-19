@@ -13,6 +13,7 @@ services:
             LANG: ja_JP.UTF-8
             TZ: Asia/Tokyo
             ASPNETCORE_ENVIRONMENT: Production
+            PROTOCOL: HTTPS
             ASPNETCORE_Kestrel__Certificates__Default__Password: password
             ASPNETCORE_Kestrel__Certificates__Default__Path: /server.pfx
             TITLE: "Health Report"

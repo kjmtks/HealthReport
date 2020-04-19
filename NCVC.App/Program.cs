@@ -47,8 +47,8 @@ namespace NCVC.App
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-                    if(env == "Production")
+                    var env = Environment.GetEnvironmentVariable("PROTOCOL")?.ToLower();
+                    if(env == "https")
                     {
                         webBuilder.UseStartup<Startup>().UseUrls("https://*:8080");
                     }

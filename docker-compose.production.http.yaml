@@ -3,17 +3,17 @@ services:
     app:
         build:
             context: .
-            dockerfile: Dockerfile
+            dockerfile: Dockerfile.production.http
         ports:
-            - 8080:8080
+            - 80:8080
         volumes:
-            - app-data:/data
+            - ./production-app-data:/data
         environment:
             LANG: ja_JP.UTF-8
             TZ: Asia/Tokyo
-            ASPNETCORE_ENVIRONMENT: Development
+            ASPNETCORE_ENVIRONMENT: Production
             PROTOCOL: HTTP
-            TITLE: "Health Report (development)"
+            TITLE: "Health Report (http)"
             TIMEFRAME: "午前 00:00:00-11:59:59; 午後 12:00:00-23:59:59"
             DAYS_TO_SEARCH: 365
 
@@ -29,21 +29,14 @@ services:
         ports:
             - 5432:5432
         volumes:
-            - db-data:/var/lib/postgresql/data
+            - ./production-db-data:/var/lib/postgresql/data
         environment:
             POSTGRES_USER: ncvc
             POSTGRES_PASSWORD: password
-            POSTGRES_DB: ncvc_development
+            POSTGRES_DB: ncvc_production
             TZ: Asia/Tokyo
         networks:
             - ncvc
-
-
-volumes:
-    app-data:
-        driver: local
-    db-data:
-        driver: local
 
 
 networks:
