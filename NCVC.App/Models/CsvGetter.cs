@@ -76,8 +76,17 @@ namespace NCVC.App.Models
                 context.Update(student);
                 context.SaveChanges();
 
+                var now = DateTime.Now;
                 var ts = new TimeSpan(received.Hour, received.Minute, received.Second);
-                var timeFrame = timeFrames?.Where(frame => frame.Item2 <= ts && ts <= frame.Item3)?.Select(frame => frame.Item1)?.FirstOrDefault() ?? "";
+                string timeFrame;
+                if(now.Year == date.Year && now.Month == date.Month && now.Day == date.Day)
+                {
+                    timeFrame = timeFrames?.Where(frame => frame.Item2 <= ts && ts <= frame.Item3)?.Select(frame => frame.Item1)?.FirstOrDefault() ?? "";
+                }
+                else
+                {
+                    timeFrame = timeFrames?.Select(frame => frame.Item1)?.LastOrDefault() ?? "";
+                }
 
                 var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && x.TimeFrame == timeFrame).FirstOrDefault();
                 var existed = health != null;
