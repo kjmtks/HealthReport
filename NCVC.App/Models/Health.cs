@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using NCVC.App.Services;
 
 namespace NCVC.App.Models
 {
@@ -89,7 +90,7 @@ namespace NCVC.App.Models
             return course.AssignedStudentAccounts().Except(students);
         }
 
-        public static IEnumerable<Health> Search(DatabaseContext context, int courseId, string filterString)
+        public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
         {
             string condition = "", order = "";
             if (filterString.Contains("order by"))
@@ -109,7 +110,19 @@ namespace NCVC.App.Models
             {
                 condition = filterString;
             }
-            IEnumerable<Health> HealthList = context.HealthList.Include(x => x.Student).OrderBy(x => x.MeasuredAt).AsNoTracking();
+
+            var days = ev.GetNumOfDaysToSearch();
+            IEnumerable<Health> HealthList;
+            if (days < 0)
+            {
+                HealthList = context.HealthList.Include(x => x.Student).OrderBy(x => x.MeasuredAt).AsNoTracking();
+            }
+            else
+            {
+                var d = DateTime.Today.AddDays(-days);
+                HealthList = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt > d).OrderBy(x => x.MeasuredAt).AsNoTracking();
+            }
+
             var parser = new Regex("^(?<lhs>[a-zA-Z0-9./]+)(?<comp>(==|!=|<=|>=|<|>))(?<rhs>[^>=<!\\s]+)$");
             var matches = condition.Split(" ").Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => parser.Match(x)).Where(x => x.Success);
             foreach (var match in matches)

@@ -24,6 +24,18 @@ namespace NCVC.App.Services
             return Environment.GetEnvironmentVariable("SUBDIR") ?? "";
         }
 
+        public int GetNumOfDaysToSearch()
+        {
+            if(int.TryParse(Environment.GetEnvironmentVariable("DAYS_TO_SEARCH"), out var days))
+            {
+                return days;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
         public IEnumerable<TimeFrame> GetTimeFrames()
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))

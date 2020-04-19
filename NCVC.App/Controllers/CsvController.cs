@@ -44,7 +44,7 @@ namespace NCVC.App.Controllers
                 return new NotFoundResult();
             }
 
-            var list = Health.Search(DB.Context, course.Id, filterString ?? "");
+            var list = Health.Search(DB.Context, EV, course.Id, filterString ?? "");
             byte[] result;
             using (var ms = new MemoryStream())
             {

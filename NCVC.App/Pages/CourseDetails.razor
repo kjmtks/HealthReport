@@ -7,6 +7,7 @@
 @using System.Web;
 @inject AuthenticationStateProvider Auth;
 @inject NotifierService Notifier;
+@inject NCVC.App.Services.EnvironmentVariableService EV;
 @implements IDisposable;
 
 <AuthorizeView Roles="Staff">
@@ -87,84 +88,84 @@
                         <tbody>
                             @foreach (var health in Pagination.ShowedModels)
                             {
-                            <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : ""))">
-                                <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
-                                @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
-                                {
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
-                                }
-                                <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
-                                <td>@health.Student.Name</td>
+                                <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : ""))">
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                    @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                                    {
+                                        <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                    }
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
+                                    <td>@health.Student.Name</td>
 
-                                <td>
-                                    @if (health.IsWrongBodyTemperature())
-                                    {<i class="attention icon"></i> }
-                                    else if (health.IsWarnBodyTemperature())
-                                    { <i class="exclamation triangle icon"></i>}
-                                    @health.BodyTemperature
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn1())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn1
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn2())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn2
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn3())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn3
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn4())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn4
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn5())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn5
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn6())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn6
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn7())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn7
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn8())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn8
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn9())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn9
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn10())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn10
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn11())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn11
-                                </td>
-                                <td>
-                                    @if (health.IsWrongStringColumn12())
-                                    {<i class="attention icon"></i>}
-                                    @health.StringColumn12
-                                </td>
-                                <td>@health.UploadedAt.ToString()</td>
-                            </tr>
+                                    <td>
+                                        @if (health.IsWrongBodyTemperature())
+                                        {<i class="attention icon"></i> }
+                                        else if (health.IsWarnBodyTemperature())
+                                        { <i class="exclamation triangle icon"></i>}
+                                        @health.BodyTemperature
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn1())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn1
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn2())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn2
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn3())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn3
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn4())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn4
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn5())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn5
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn6())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn6
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn7())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn7
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn8())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn8
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn9())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn9
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn10())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn10
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn11())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn11
+                                    </td>
+                                    <td>
+                                        @if (health.IsWrongStringColumn12())
+                                        {<i class="attention icon"></i>}
+                                        @health.StringColumn12
+                                    </td>
+                                    <td>@health.UploadedAt.ToString()</td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -267,7 +268,7 @@
                 var condition = $"date=={today.Year}/{today.Month}/{today.Day}";
                 var order = "student";
                 SetConditionAndOrder(condition, order);
-                HealthList = Health.Search(DB.Context, id, FilterString);
+                HealthList = Health.Search(DB.Context, EV, id, FilterString);
                 //HealthList = DB.Context.HealthList.Include(x => x.Student).Where(x => x.CourseId == id).OrderBy(x => x.MeasuredAt);
             }
         }
@@ -472,7 +473,7 @@
 
     protected void Filter(string filterString)
     {
-        HealthList = Health.Search(DB.Context, Course.Id, filterString);
+        HealthList = Health.Search(DB.Context, EV, Course.Id, filterString);
     }
 
 }
