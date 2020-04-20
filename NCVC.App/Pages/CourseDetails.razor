@@ -179,7 +179,7 @@
 
             <div class="ui basic segment">
                 <div class="ui menu top attached">
-                    <span class="item">未提出の学生 (@(ussDate.ToShortDateString()))</span>
+                    <span class="item">未提出の観察対象者 (@(ussDate.ToShortDateString()))</span>
                     <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
                     <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
                     <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
@@ -188,7 +188,7 @@
                     <thead>
                         <tr>
                             <th colspan="2" class="single line">
-                                学生
+                                観察対象者
                             </th>
                         </tr>
                     </thead>

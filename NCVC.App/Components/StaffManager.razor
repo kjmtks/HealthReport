@@ -67,7 +67,7 @@
 
 
         <div class="ui modal" id="edit-form-@ComponentId">
-            <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
+            <div class="header">@(Mode == EditMode.CreateNew ? "新規作成" : "編集")</div>
             <div class="content">
 
                 <EditForm EditContext="@EditContext" OnSubmit="@Submit">

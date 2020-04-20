@@ -13,7 +13,7 @@
     <h2 class="ui header">
         <i class="list icon"></i>
         <div class="content">
-            コース
+            グループ
         </div>
     </h2>
     <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
@@ -34,7 +34,7 @@
                     <tr>
                         <th class="single line">名前</th>
                         <th class="single line">受付メールアドレス</th>
-                        <th class="single line">学生数</th>
+                        <th class="single line">観察対象者数</th>
                         @if (IsAdmin)
                         {
                             <th class="single line"></th>
@@ -65,7 +65,7 @@
 
 
     <div class="ui modal" id="edit-form-@ComponentId">
-        <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
+        <div class="header">@(Mode == EditMode.CreateNew ? "新規作成" : "編集")</div>
         <div class="content">
 
             <EditForm EditContext="@EditContext" OnSubmit="@Submit">
@@ -138,8 +138,8 @@
                         <ValidationMessage For="@(() => EdittingModel.StaffAccounts)" />
                     </div>
                     <div class="field">
-                        <label>所属学生リスト</label>
-                        このコースに所属させる学生のアカウントを半角スペースまたは改行区切りで記述してください.
+                        <label>所属観察対象者リスト</label>
+                        このグループに所属させる観察対象者のアカウントを半角スペースまたは改行区切りで記述してください.
                         <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
                         <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
                     </div>
