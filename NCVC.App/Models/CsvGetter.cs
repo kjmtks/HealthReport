@@ -26,7 +26,7 @@ namespace NCVC.App.Models
             var timeFrames = ev.GetTimeFrames();
 
             bool flag = false;
-            var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, course.ImapMailSubject, lastIndex, course.SecurityMode);
+            var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, ev.GetMailSubject(), lastIndex, course.SecurityMode);
             foreach (var (rowList, received, idx) in data)
             {
                 var row = rowList.ToArray();

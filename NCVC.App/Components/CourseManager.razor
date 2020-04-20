@@ -9,48 +9,44 @@
 @implements IDisposable;
 
 
-    <div class="@CssClass">
-        <h2 class="ui header">
-            <i class="list icon"></i>
-            <div class="content">
-                コース
-            </div>
-        </h2>
-        <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
+<div class="@CssClass">
+    <h2 class="ui header">
+        <i class="list icon"></i>
+        <div class="content">
+            コース
+        </div>
+    </h2>
+    <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
 
-        <div class="ui basic segment">
-            <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
-                <div class="ui text loader">Please wait...</div>
+    <div class="ui basic segment">
+        <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+            <div class="ui text loader">Please wait...</div>
+        </div>
+        @if (IsAdmin)
+        {
+            <div class="ui menu top attached">
+                <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
             </div>
-            @if (IsAdmin)
-            {
-                <div class="ui menu top attached">
-                    <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
-                </div>
-            }
-            <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
-                <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
-                    <thead>
-                        <tr>
-                            <th class="single line">名前</th>
-                            <th class="single line">受付メールアドレス</th>
-                            <th class="single line">受付メールサブジェクト</th>
-                            <th class="single line">IMAP暗号化方式</th>
-                            <th class="single line">学生数</th>
-                            @if (IsAdmin)
-                            {
-                                <th class="single line"></th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var model in Pagination.ShowedModels)
+        }
+        <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
+            <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
+                <thead>
+                    <tr>
+                        <th class="single line">名前</th>
+                        <th class="single line">受付メールアドレス</th>
+                        <th class="single line">学生数</th>
+                        @if (IsAdmin)
                         {
+                            <th class="single line"></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var model in Pagination.ShowedModels)
+                    {
                         <tr>
                             <td><a href="course/@model.Id">@model.Name</a></td>
                             <td>@model.EmailAddress</td>
-                            <td>@model.ImapMailSubject</td>
-                            <td>@model.SecurityMode</td>
                             <td>@model.AssignedStudentAccounts().Count()</td>
                             @if (IsAdmin)
                             {
@@ -60,114 +56,109 @@
                                 </td>
                             }
                         </tr>
-                        }
-                    </tbody>
-                </table>
-            </Paginated>
-        </div>
+                    }
+                </tbody>
+            </table>
+        </Paginated>
+    </div>
 
 
 
-        <div class="ui modal" id="edit-form-@ComponentId">
-            <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
-            <div class="content">
+    <div class="ui modal" id="edit-form-@ComponentId">
+        <div class="header">@(Mode == EditMode.CreateNew ? "Add New" : "Edit") User</div>
+        <div class="content">
 
-                <EditForm EditContext="@EditContext" OnSubmit="@Submit">
-                    <DataAnnotationsValidator />
-                    <div class="ui form">
-                        <div class="field">
-                            <label>名前</label>
-                            <InputText @bind-Value="@EdittingModel.Name" />
-                            <ValidationMessage For="@(() => EdittingModel.Name)" />
-                        </div>
-                        <div class="field">
-                            <label>受付メールアドレス</label>
-                            <InputText @bind-Value="@EdittingModel.EmailAddress" />
-                            <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
-                        </div>
-                        <div class="field">
-                            <label>受付メールサブジェクト</label>
-                            <InputText @bind-Value="@EdittingModel.ImapMailSubject" />
-                            <ValidationMessage For="@(() => EdittingModel.ImapMailSubject)" />
-                        </div>
-                        <div class="field">
-                            <label>IMAP ホスト</label>
-                            <InputText @bind-Value="@EdittingModel.ImapHost" />
-                            <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
-                        </div>
-                        <div class="field">
-                            <label>IMAP ポート</label>
-                            <InputNumber @bind-Value="@EdittingModel.ImapPort" />
-                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
-                        </div>
-                        <div class="field">
-                            <label>IMAP暗号化方式</label>
-                            <select class="ui fluid dropdown" @bind="securityMode">
-                                @if (EdittingModel.SecurityMode == "auto")
-                                {
-                                    <option value="auto" selected>auto</option>
-                                }
-                                else
-                                {
-                                    <option value="auto">auto</option>
-                                }
-                                @if (EdittingModel.SecurityMode == "ssl")
-                                {
-                                    <option value="ssl" selected>ssl</option>
-                                }
-                                else
-                                {
-                                    <option value="ssl">ssl</option>
-                                }
-                                @if (EdittingModel.SecurityMode == "none")
-                                {
-                                    <option value="none" selected>none</option>
-                                }
-                                else
-                                {
-                                    <option value="none">none</option>
-                                }
-                            </select>
-                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
-                        </div>
-                        <div class="field">
-                            <label>IMAP アカウント</label>
-                            <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
-                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
-                        </div>
-                        <div class="field">
-                            <label>IMAP パスワード</label>
-                            <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
-                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
-                        </div>
-                        <div class="field">
-                            <label>スタッフリスト</label>
-                            このコースに所属させるスタッフのアカウントを半角スペースまたは改行区切りで記述してください.
-                            <InputTextArea @bind-Value="@EdittingModel.StaffAccounts" />
-                            <ValidationMessage For="@(() => EdittingModel.StaffAccounts)" />
-                        </div>
-                        <div class="field">
-                            <label>所属学生リスト</label>
-                            このコースに所属させる学生のアカウントを半角スペースまたは改行区切りで記述してください.
-                            <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
-                            <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
-                        </div>
+            <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                <DataAnnotationsValidator />
+                <div class="ui form">
+                    <div class="field">
+                        <label>名前</label>
+                        <InputText @bind-Value="@EdittingModel.Name" />
+                        <ValidationMessage For="@(() => EdittingModel.Name)" />
+                    </div>
+                    <div class="field">
+                        <label>受付メールアドレス</label>
+                        <InputText @bind-Value="@EdittingModel.EmailAddress" />
+                        <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP ホスト</label>
+                        <InputText @bind-Value="@EdittingModel.ImapHost" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP ポート</label>
+                        <InputNumber @bind-Value="@EdittingModel.ImapPort" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP暗号化方式</label>
+                        <select class="ui fluid dropdown" @bind="securityMode">
+                            @if (EdittingModel.SecurityMode == "auto")
+                            {
+                                <option value="auto" selected>auto</option>
+                            }
+                            else
+                            {
+                                <option value="auto">auto</option>
+                            }
+                            @if (EdittingModel.SecurityMode == "ssl")
+                            {
+                                <option value="ssl" selected>ssl</option>
+                            }
+                            else
+                            {
+                                <option value="ssl">ssl</option>
+                            }
+                            @if (EdittingModel.SecurityMode == "none")
+                            {
+                                <option value="none" selected>none</option>
+                            }
+                            else
+                            {
+                                <option value="none">none</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP アカウント</label>
+                        <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP パスワード</label>
+                        <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
+                    </div>
+                    <div class="field">
+                        <label>スタッフリスト</label>
+                        このコースに所属させるスタッフのアカウントを半角スペースまたは改行区切りで記述してください.
+                        <InputTextArea @bind-Value="@EdittingModel.StaffAccounts" />
+                        <ValidationMessage For="@(() => EdittingModel.StaffAccounts)" />
+                    </div>
+                    <div class="field">
+                        <label>所属学生リスト</label>
+                        このコースに所属させる学生のアカウントを半角スペースまたは改行区切りで記述してください.
+                        <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
+                        <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
+                    </div>
 
-                        <div class="content">
-                            <div class="actions">
-                                <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
-                                <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
-                            </div>
+                    <div class="content">
+                        <div class="actions">
+                            <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
+                            <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
                         </div>
                     </div>
-                </EditForm>
+                </div>
+            </EditForm>
 
-            </div>
         </div>
-
-
-
     </div>
+
+
+
+</div>
 
 @code{
     [Parameter]
@@ -225,7 +216,6 @@
     protected async Task OpenCreate()
     {
         EdittingModel = new Course();
-        EdittingModel.ImapMailSubject = "健康フォローアップ用健康観察データの報告";
         Mode = EditMode.CreateNew;
         ResetEdittingModel();
         await OpenEditDialog();

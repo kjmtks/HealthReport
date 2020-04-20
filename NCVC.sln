@@ -8,12 +8,13 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{896A00C6-6705-43F9-838D-374F60120626}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		docker-compose.development.override.yaml = docker-compose.development.override.yaml
 		docker-compose.production.default.yaml = docker-compose.production.default.yaml
+		docker-compose.production.http.yaml = docker-compose.production.http.yaml
 		docker-compose.production.yaml = docker-compose.production.yaml
 		docker-compose.yaml = docker-compose.yaml
 		Dockerfile = Dockerfile
 		Dockerfile.production = Dockerfile.production
+		Dockerfile.production.http = Dockerfile.production.http
 		entrypoint.sh = entrypoint.sh
 		LICENSE = LICENSE
 		Makefile = Makefile

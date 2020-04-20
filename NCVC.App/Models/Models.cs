@@ -40,8 +40,6 @@ namespace NCVC.App.Models
         public string ImapMailUserPassword { get; set; }
         [Required]
         public int ImapMailIndexOffset { get; set; }
-        [Required, StringLength(256)]
-        public string ImapMailSubject { get; set; }
 
         public string SecurityMode { get; set; }
         public string StudentAccounts { get; set; }
