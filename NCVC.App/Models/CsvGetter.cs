@@ -44,10 +44,9 @@ namespace NCVC.App.Models
                 var name = row[1];
 
 
-                var success = DateTime.TryParseExact(row[2], new string[] { "yyyy/MM/dd", "yyyy/M/dd", "yyyy/MM/d", "yyyy/M/d" },
+               if(!DateTime.TryParseExact(row[2], new string[] { "yyyy/MM/dd", "yyyy/M/dd", "yyyy/MM/d", "yyyy/M/d" },
                     System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None, out var date);
-                if (!success)
+                    System.Globalization.DateTimeStyles.None, out var date))
                 {
                     continue;
                 }
@@ -61,10 +60,9 @@ namespace NCVC.App.Models
                 context.Update(student);
                 context.SaveChanges();
 
-                var now = DateTime.Now;
                 var ts = new TimeSpan(received.Hour, received.Minute, received.Second);
                 string timeFrameName;
-                if(now.Year == date.Year && now.Month == date.Month && now.Day == date.Day)
+                if(received.Year == date.Year && received.Month == date.Month && received.Day == date.Day)
                 {
                     timeFrameName = timeFrames?.Where(frame => frame.IsIn(received))?.FirstOrDefault()?.Name ?? "";
                 }
