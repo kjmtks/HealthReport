@@ -35,9 +35,6 @@ namespace NCVC.App.Models
 
         public int MailIndex { get; set; }
 
-        //public int CourseId { get; set; }
-        //public virtual Course Course { get; set; }
-
         public int StudentId { get; set; }
         public virtual Student Student { get; set; }
 
@@ -45,14 +42,14 @@ namespace NCVC.App.Models
 
         public bool IsWrongBodyTemperature() => BodyTemperature >= (decimal)37.5;
         public bool IsWarnBodyTemperature() => BodyTemperature >= (decimal)37;
-        public bool IsWrongStringColumn1() => StringColumn1 != "無";
-        public bool IsWrongStringColumn2() => StringColumn2 != "無";
-        public bool IsWrongStringColumn3() => StringColumn3 != "無";
-        public bool IsWrongStringColumn4() => StringColumn4 != "無";
-        public bool IsWrongStringColumn5() => StringColumn5 != "無";
-        public bool IsWrongStringColumn6() => StringColumn6 != "無";
-        public bool IsWrongStringColumn7() => StringColumn7 != "無";
-        public bool IsWrongStringColumn8() => StringColumn8 != "無";
+        public bool IsWrongStringColumn1() => StringColumn1 != "無" && StringColumn1 != "N";
+        public bool IsWrongStringColumn2() => StringColumn2 != "無" && StringColumn2 != "N";
+        public bool IsWrongStringColumn3() => StringColumn3 != "無" && StringColumn3 != "N";
+        public bool IsWrongStringColumn4() => StringColumn4 != "無" && StringColumn4 != "N";
+        public bool IsWrongStringColumn5() => StringColumn5 != "無" && StringColumn5 != "N";
+        public bool IsWrongStringColumn6() => StringColumn6 != "無" && StringColumn6 != "N";
+        public bool IsWrongStringColumn7() => StringColumn7 != "無" && StringColumn7 != "N";
+        public bool IsWrongStringColumn8() => StringColumn8 != "無" && StringColumn8 != "N";
         public bool IsWrongStringColumn9() => !string.IsNullOrWhiteSpace(StringColumn9);
         public bool IsWrongStringColumn10() => StringColumn10 != "N";
         public bool IsWrongStringColumn11() => StringColumn11 != "N";

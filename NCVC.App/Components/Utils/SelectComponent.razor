@@ -1,0 +1,23 @@
+﻿@typeparam T
+
+<select class="ui fluid dropdown" @bind="SelectedValue">
+    @foreach (var option in Options)
+    {
+        @if (SelectedValue != null && SelectedValue.Equals(option.Item1))
+        {
+            <option value="@option.Item1.ToString()" selected>@option.Item2</option>
+        }
+        else
+        {
+            <option value="auto">@option.Item2</option>
+        }
+    }
+</select>
+
+
+@code {
+    [Parameter]
+    public T SelectedValue { get; set; }
+    [Parameter]
+    public IEnumerable<(T, string)> Options { get; set; }
+}
