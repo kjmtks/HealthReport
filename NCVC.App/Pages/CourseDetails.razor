@@ -28,15 +28,14 @@
             <div class="ui basic segment">
                 <div class="ui menu top attached">
                     <a class="item" @onclick='() => { FilterString = ""; Filter(""); }'>絞り込みリセット</a>
-                    <a class="item" @onclick='SetOnlyError'>異常のみ</a>
-                    <a class="item" @onclick='() => { SetTemp(37); }'>体温37.0℃以上</a>
-                    <a class="item" @onclick='() => { SetTemp(37.5); }'>体温37.5℃以上</a>
-                    <a class="item" @onclick='SetYesterday'>昨日</a>
-                    <a class="item" @onclick='SetToday'>今日</a>
-                    <a class="item" @onclick='SetLastWeek'>前週</a>
-                    <a class="item" @onclick='SetThisWeek'>今週</a>
-                    <a class="item" @onclick='SetLastMonth'>前月</a>
-                    <a class="item" @onclick='SetThisMonth'>今月</a>
+                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[]{"\r\n","\n","\r"},StringSplitOptions.None))
+                    {
+                        var xs = button.Split(":", 2);
+                        if (xs.Count() >= 2)
+                        {
+                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
+                        }
+                    }
                     <div class="right menu">
                         <div class="item" style="width: 50em">
                             <div class="ui transparent icon input">
@@ -365,14 +364,38 @@
         Filter(FilterString);
     }
 
-    protected void SetTemp(double temp)
+    protected void SetFiltering(string expr)
     {
         var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("temp")).Select(x => x.Trim()));
-        condition = $"{condition} temp>={temp}";
+        if(expr.Contains("error"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
+        }
+        if(expr.Contains("student"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
+        }
+        if(expr.Contains("date"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
+        }
+        if(expr.Contains("temp"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("temp")).Select(x => x.Trim()));
+        }
+        if(expr.Contains("timeframe"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
+        }
+        if(expr.Contains("tag"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("tag")).Select(x => x.Trim()));
+        }
+        condition = $"{condition} {expr}";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
+
     protected void SetStudent(Student student)
     {
         var (condition, order) = GetConditionAndOrder();
@@ -394,62 +417,6 @@
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
         condition = $"{condition} date=={date.Year}/{date.Month}/{date.Day}";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetOnlyError()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
-        condition = $"{condition} error==true";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetYesterday()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date==today-1";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetToday()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date==today";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetLastWeek()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date>=thisweek-1 date<thisweek";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetThisWeek()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date>=thisweek date<thisweek+1";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetLastMonth()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date>=thismonth-1 date<thismonth";
-        SetConditionAndOrder(condition, order);
-        Filter(FilterString);
-    }
-    protected void SetThisMonth()
-    {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date>=thismonth date<thismonth+1";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }

@@ -143,6 +143,11 @@
                         <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
                         <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
                     </div>
+                    <div class="field">
+                        <label>フィルタボタン</label>
+                        <InputTextArea @bind-Value="@EdittingModel.FilterButtons" />
+                        <ValidationMessage For="@(() => EdittingModel.FilterButtons)" />
+                    </div>
 
                     <div class="content">
                         <div class="actions">
@@ -216,6 +221,18 @@
     protected async Task OpenCreate()
     {
         EdittingModel = new Course();
+        EdittingModel.FilterButtons = @"異常あり: error==true
+体温37.0℃以上: temp>=37.0
+体温37.5℃以上: temp>=37.5
+直近4日: date>today-4 date<=today
+昨日: date==today-1
+今日: date==today
+先週: date>=thisweek-1 date<thisweek
+今週: date>=thisweek date<thisweek+1
+先月: date>=thismonth-1 date<thismonth
+今月: date>=thismonth date<thismonth+1
+要注目: tag==要注目";
+
         Mode = EditMode.CreateNew;
         ResetEdittingModel();
         await OpenEditDialog();

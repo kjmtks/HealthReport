@@ -40,6 +40,8 @@ namespace NCVC.App.Models
         [Required]
         public int ImapMailIndexOffset { get; set; }
 
+        public string FilterButtons { get; set; }
+
         public string SecurityMode { get; set; }
         public string StudentAccounts { get; set; }
         public string StaffAccounts { get; set; }
