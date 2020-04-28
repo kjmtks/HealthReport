@@ -38,6 +38,7 @@
                         <th class="single line">観察対象者番号</th>
                         <th class="single line">名前</th>
                         <th class="single line">報告者ID</th>
+                        <th class="single line">タグ</th>
                         <th class="single line"></th>
                     </tr>
                 </thead>
@@ -54,6 +55,12 @@
                         <td>
                             @student.Hash
                         </td>
+                        <td>
+                            @foreach(var tag in student.Tags?.Split(" ") ?? new string[]{})
+                            {
+                            <div class="ui mini label">@tag</div>
+                            }
+                        </td>
                         <td class="right aligned">
                             <a class="ui red icon button" @onclick="() => RemoveAsync(student)"><i class="trash icon"></i></a>
                         </td>
@@ -69,10 +76,10 @@
             追加または更新する観察対象者の情報を以下の様式に従って1行につき1名ずつ記述してください．
             @if (useLdap)
             {
-                <pre>観察対象者番号 報告者ID LDAP</pre>
+                <pre>観察対象者番号 報告者ID LDAP タグ(スペース区切り，任意)</pre>
                 <text>または</text>
             }
-            <pre>観察対象者番号 報告者ID 名前</pre>
+                <pre>観察対象者番号 報告者ID 名前 タグ(スペース区切り，任意)</pre>
             @if (useLdap)
             {
                 <text>前者の方法では，観察対象者の名前をLDAPから取得します．</text>
@@ -125,19 +132,20 @@
 
             var saccount = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_ACCOUNT");
             var spassword = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_PASSWORD");
-            foreach (var entry in List.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(new string[] { " ", "\t" }, 3, StringSplitOptions.RemoveEmptyEntries)))
+            foreach (var entry in List.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(new string[] { " ", "\t" }, 4, StringSplitOptions.RemoveEmptyEntries)))
             {
                 if (entry.Count() >= 3)
                 {
                     var account = entry[0].Trim();
                     var hash = entry[1].Trim();
                     var name = entry[2].Trim();
+                    var tags = entry.Count() >= 4 ? entry[3].Trim() : "";
                     if (useLdap && name.ToLower() == "ldap")
                     {
                         name = Student.FindStudentNameByLdap(account, saccount, spassword);
                         if (name == null)
                         {
-                            Message += $"Who {account}?;";
+                            Message += $"Who {account}?; ";
                             StateHasChanged();
                             continue;
                         }
@@ -150,18 +158,20 @@
                         {
                             Account = account,
                             Hash = hash,
-                            Name = name
+                            Name = name,
+                            Tags = tags
                         };
                         DB.Context.Students.Add(newStudent);
-                        Message += $"Add {account};";
+                        Message += $"Add {account}; ";
                         StateHasChanged();
                     }
                     else
                     {
                         existedStudent.Name = name;
                         existedStudent.Hash = hash;
+                        existedStudent.Tags = tags;
                         DB.Context.Students.Update(existedStudent);
-                        Message += $"Update {account}({name});";
+                        Message += $"Update {account}({name}); ";
                         StateHasChanged();
                     }
                 }

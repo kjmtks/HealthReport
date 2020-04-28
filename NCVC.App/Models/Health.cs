@@ -138,6 +138,11 @@ namespace NCVC.App.Models
                         case (string student, "==", "student"): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
                         case (string student, "!=", "student"): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
 
+                        case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
+                        case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
+                        case (string tag, "==", "tag"): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
+                        case (string tag, "!=", "tag"): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
+
                         case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
                         case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
                         case (string timeframe, "==", "timeframe"): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;

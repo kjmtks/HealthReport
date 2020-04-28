@@ -26,7 +26,6 @@ namespace NCVC.App.Models
         public string Name { get; set; }
 
         public virtual ICollection<History> Histories { get; set; } = new List<History>();
-        //public virtual ICollection<Health> HealthList { get; set; } = new List<Health>();
 
         [Required, EmailAddress]
         public string EmailAddress { get; set; }
@@ -104,6 +103,7 @@ namespace NCVC.App.Models
         public int Id { get; set; }
         public string Account { get; set; }
         public string Name { get; set; }
+        public string Tags { get; set; }
 
 
         public string Hash { get; set; } // 報告者IDのこと
@@ -116,6 +116,12 @@ namespace NCVC.App.Models
         [RegularExpression(@"^KN[0-9]+$")]
         [Required, StringLength(6, MinimumLength = 5)]
         public string NewHash { get; set; }
+
+
+        public bool HasTag(string tag)
+        {
+            return Tags.Split().Contains(tag);
+        }
 
         public static (bool, string) LdapAuthenticate(string account, string password)
         {
