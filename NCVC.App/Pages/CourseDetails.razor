@@ -265,7 +265,7 @@
                 Allowed = true;
 
                 var today = DateTime.Today;
-                var condition = $"date=={today.Year}/{today.Month}/{today.Day}";
+                var condition = $"date==today";
                 var order = "student";
                 SetConditionAndOrder(condition, order);
                 HealthList = Health.Search(DB.Context, EV, id, FilterString);
@@ -409,8 +409,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var yesterday = DateTime.Today.AddDays(-1);
-        condition = $"{condition} date=={yesterday.Year}/{yesterday.Month}/{yesterday.Day}";
+        condition = $"{condition} date==today-1";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -418,8 +417,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var today = DateTime.Today;
-        condition = $"{condition} date=={today.Year}/{today.Month}/{today.Day}";
+        condition = $"{condition} date==today";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -427,11 +425,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var day = DateTime.Today.AddDays(-7);
-        int diff = (7 + (day.DayOfWeek - DayOfWeek.Monday)) % 7;
-        var start = day.AddDays(-1 * diff).Date;
-        var end = start.AddDays(6);
-        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<={end.Year}/{end.Month}/{end.Day}";
+        condition = $"{condition} date>=thisweek-1 date<thisweek";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -439,11 +433,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var today = DateTime.Today;
-        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
-        var start = today.AddDays(-1 * diff).Date;
-        var end = start.AddDays(6);
-        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<={end.Year}/{end.Month}/{end.Day}";
+        condition = $"{condition} date>=thisweek date<thisweek+1";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -451,11 +441,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var today = DateTime.Today;
-        var month = new DateTime(today.Year, today.Month, 1);
-        var start = month.AddMonths(-1);
-        var end = month;
-        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<{end.Year}/{end.Month}/{end.Day}";
+        condition = $"{condition} date>=thismonth-1 date<thismonth";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -463,10 +449,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        var today = DateTime.Today;
-        var start = new DateTime(today.Year, today.Month, 1);
-        var end = start.AddMonths(1);
-        condition = $"{condition} {start.Year}/{start.Month}/{start.Day}<=date date<{end.Year}/{end.Month}/{end.Day}";
+        condition = $"{condition} date>=thismonth date<thismonth+1";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }

@@ -9,6 +9,10 @@ using NCVC.App.Services;
 namespace NCVC.App.Models
 {
 
+    public enum DateSpan
+    {
+        Day, Week, Month
+    }
     public class Health
     {
         public int Id { get; set; }
@@ -87,6 +91,90 @@ namespace NCVC.App.Models
             return course.AssignedStudentAccounts().Except(students);
         }
 
+        private static DateTime? parseDateRhs(string dateStr)
+        {
+            if(dateStr.Contains("+"))
+            {
+                var xs = dateStr.Split("+", 2);
+                var baseDate = parseDate(xs[0]);
+                if(!baseDate.HasValue)
+                {
+                    return null;
+                }
+                if (!int.TryParse(xs[1], out var val))
+                {
+                    return null;
+                }
+                switch (baseDate.Value.Item2)
+                {
+                    case DateSpan.Day: return baseDate.Value.Item1.AddDays(val);
+                    case DateSpan.Week: return baseDate.Value.Item1.AddDays(7*val);
+                    case DateSpan.Month: return baseDate.Value.Item1.AddMonths(val);
+                    default: return null;
+                }
+            }
+            else if (dateStr.Contains("-"))
+            {
+                var xs = dateStr.Split("-", 2);
+                var baseDate = parseDate(xs[0]);
+                if (!baseDate.HasValue)
+                {
+                    return null;
+                }
+                if (!int.TryParse(xs[1], out var val))
+                {
+                    return null;
+                }
+                switch (baseDate.Value.Item2)
+                {
+                    case DateSpan.Day: return baseDate.Value.Item1.AddDays(-val);
+                    case DateSpan.Week: return baseDate.Value.Item1.AddDays(-7 * val);
+                    case DateSpan.Month: return baseDate.Value.Item1.AddMonths(-val);
+                    default: return null;
+                }
+            }
+            else
+            {
+                var baseDate = parseDate(dateStr);
+                if (!baseDate.HasValue)
+                {
+                    return null;
+                }
+                return baseDate.Value.Item1;
+            }
+        }
+        private static (DateTime, DateSpan)? parseDate(string dateStr)
+        {
+            if (dateStr == "today")
+            {
+                return (DateTime.Today, DateSpan.Day);
+            }
+            else if (dateStr == "thisweek")
+            {
+                var today = DateTime.Today;
+                int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+                var start = today.AddDays(-1 * diff).Date;
+                return (start, DateSpan.Week);
+            }
+            else if (dateStr == "thismonth")
+            {
+                var today = DateTime.Today;
+                var start = new DateTime(today.Year, today.Month, 1);
+                return (start, DateSpan.Month);
+            }
+            else
+            {
+                if (DateTime.TryParse(dateStr, out var date))
+                {
+                    return (date, DateSpan.Day);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+
         public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
         {
             string condition = "", order = "";
@@ -130,36 +218,22 @@ namespace NCVC.App.Models
                     {
                         case ("error", "==", string errorStr): if (bool.TryParse(errorStr, out bool error1)) HealthList = HealthList.Where(x => x.HasWrongValue() == error1); break;
                         case ("error", "!=", string errorStr): if (bool.TryParse(errorStr, out bool error2)) HealthList = HealthList.Where(x => x.HasWrongValue() != error2); break;
-                        case (string errorStr, "==", "error"): if (bool.TryParse(errorStr, out bool error3)) HealthList = HealthList.Where(x => x.HasWrongValue() == error3); break;
-                        case (string errorStr, "!=", "error"): if (bool.TryParse(errorStr, out bool error4)) HealthList = HealthList.Where(x => x.HasWrongValue() != error4); break;
 
                         case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
                         case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
-                        case (string student, "==", "student"): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
-                        case (string student, "!=", "student"): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
 
                         case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
                         case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
-                        case (string tag, "==", "tag"): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
-                        case (string tag, "!=", "tag"): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
 
                         case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
                         case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
-                        case (string timeframe, "==", "timeframe"): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
-                        case (string timeframe, "!=", "timeframe"): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
 
-                        case ("date", "==", string dateStr): if (DateTime.TryParse(dateStr, out var date1)) HealthList = HealthList.Where(x => x.MeasuredAt == date1); break;
-                        case ("date", "!=", string dateStr): if (DateTime.TryParse(dateStr, out var date2)) HealthList = HealthList.Where(x => x.MeasuredAt != date2); break;
-                        case ("date", "<=", string dateStr): if (DateTime.TryParse(dateStr, out var date3)) HealthList = HealthList.Where(x => x.MeasuredAt <= date3); break;
-                        case ("date", ">=", string dateStr): if (DateTime.TryParse(dateStr, out var date4)) HealthList = HealthList.Where(x => x.MeasuredAt >= date4); break;
-                        case ("date", "<", string dateStr): if (DateTime.TryParse(dateStr, out var date5)) HealthList = HealthList.Where(x => x.MeasuredAt < date5); break;
-                        case ("date", ">", string dateStr): if (DateTime.TryParse(dateStr, out var date6)) HealthList = HealthList.Where(x => x.MeasuredAt > date6); break;
-                        case (string dateStr, "==", "date"): if (DateTime.TryParse(dateStr, out var date7)) HealthList = HealthList.Where(x => date7 == x.MeasuredAt); break;
-                        case (string dateStr, "!=", "date"): if (DateTime.TryParse(dateStr, out var date8)) HealthList = HealthList.Where(x => date8 != x.MeasuredAt); break;
-                        case (string dateStr, "<=", "date"): if (DateTime.TryParse(dateStr, out var date9)) HealthList = HealthList.Where(x => date9 <= x.MeasuredAt); break;
-                        case (string dateStr, ">=", "date"): if (DateTime.TryParse(dateStr, out var date10)) HealthList = HealthList.Where(x => date10 >= x.MeasuredAt); break;
-                        case (string dateStr, "<", "date"): if (DateTime.TryParse(dateStr, out var date11)) HealthList = HealthList.Where(x => date11 < x.MeasuredAt); break;
-                        case (string dateStr, ">", "date"): if (DateTime.TryParse(dateStr, out var date12)) HealthList = HealthList.Where(x => date12 > x.MeasuredAt); break;
+                        case ("date", "==", string dateStr): var date1 = parseDateRhs(dateStr); if (date1.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt == date1); } break;
+                        case ("date", "!=", string dateStr): var date2 = parseDateRhs(dateStr); if (date2.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt != date2); } break;
+                        case ("date", "<=", string dateStr): var date3 = parseDateRhs(dateStr); if (date3.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt <= date3); } break;
+                        case ("date", ">=", string dateStr): var date4 = parseDateRhs(dateStr); if (date4.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt >= date4); } break;
+                        case ("date", "<", string dateStr): var date5 = parseDateRhs(dateStr); if (date5.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt < date5); } break;
+                        case ("date", ">", string dateStr): var date6 = parseDateRhs(dateStr); if (date6.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt > date6); } break;
 
                         case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
                         case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;
@@ -167,12 +241,6 @@ namespace NCVC.App.Models
                         case ("temp", ">=", string tempStr): if (decimal.TryParse(tempStr, out var temp4)) HealthList = HealthList.Where(x => x.BodyTemperature >= temp4); break;
                         case ("temp", "<", string tempStr): if (decimal.TryParse(tempStr, out var temp5)) HealthList = HealthList.Where(x => x.BodyTemperature < temp5); break;
                         case ("temp", ">", string tempStr): if (decimal.TryParse(tempStr, out var temp6)) HealthList = HealthList.Where(x => x.BodyTemperature > temp6); break;
-                        case (string tempStr, "==", "temp"): if (decimal.TryParse(tempStr, out var temp7)) HealthList = HealthList.Where(x => temp7 == x.BodyTemperature); break;
-                        case (string tempStr, "!=", "temp"): if (decimal.TryParse(tempStr, out var temp8)) HealthList = HealthList.Where(x => temp8 != x.BodyTemperature); break;
-                        case (string tempStr, "<=", "temp"): if (decimal.TryParse(tempStr, out var temp9)) HealthList = HealthList.Where(x => temp9 <= x.BodyTemperature); break;
-                        case (string tempStr, ">=", "temp"): if (decimal.TryParse(tempStr, out var temp10)) HealthList = HealthList.Where(x => temp10 >= x.BodyTemperature); break;
-                        case (string tempStr, "<", "temp"): if (decimal.TryParse(tempStr, out var temp11)) HealthList = HealthList.Where(x => temp11 < x.BodyTemperature); break;
-                        case (string tempStr, ">", "temp"): if (decimal.TryParse(tempStr, out var temp12)) HealthList = HealthList.Where(x => temp12 > x.BodyTemperature); break;
                     }
 
                 }
