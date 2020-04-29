@@ -22,6 +22,10 @@ namespace NCVC.App.Services
         {
             return Environment.GetEnvironmentVariable("MAIL_SUBJECT") ?? "健康フォローアップ用健康観察データの報告";
         }
+        public string GetMailInfectedSubject()
+        {
+            return Environment.GetEnvironmentVariable("MAIL_INFECTED_SUBJECT") ?? "【感染者用】健康観察データの報告";
+        }
 
         public string GetSubdir()
         {

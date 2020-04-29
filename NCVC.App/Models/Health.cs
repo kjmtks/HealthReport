@@ -37,6 +37,24 @@ namespace NCVC.App.Models
         public string StringColumn11 { get; set; }
         public string StringColumn12 { get; set; }
 
+        public bool IsInfected { get; set; } = false;
+        public TimeSpan InfectedMeasuredTime1 { get; set; }
+        public TimeSpan InfectedMeasuredTime2 { get; set; }
+        public decimal InfectedBodyTemperature1 { get; set; }
+        public decimal InfectedBodyTemperature2 { get; set; }
+        public int InfectedOxygenSaturation1 { get; set; }
+        public int InfectedOxygenSaturation2 { get; set; }
+        public string InfectedStringColumn1 { get; set; }
+        public string InfectedStringColumn2 { get; set; }
+        public string InfectedStringColumn3 { get; set; }
+        public string InfectedStringColumn4 { get; set; }
+        public string InfectedStringColumn5 { get; set; }
+        public string InfectedStringColumn6 { get; set; }
+        public string InfectedStringColumn7 { get; set; }
+        public string InfectedStringColumn8 { get; set; }
+        public string InfectedStringColumn9 { get; set; }
+        public string InfectedStringColumn10 { get; set; }
+
 
         public int MailIndex { get; set; }
 
@@ -351,6 +369,9 @@ namespace NCVC.App.Models
 
                         case ("submitted", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted1)) HealthList = HealthList.Where(x => !x.IsEmptyData == submitted1); break;
                         case ("submitted", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted2)) HealthList = HealthList.Where(x => !x.IsEmptyData != submitted2); break;
+
+                        case ("infected", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool infected1)) HealthList = HealthList.Where(x => x.IsInfected == infected1); break;
+                        case ("infected", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool infected2)) HealthList = HealthList.Where(x => x.IsInfected != infected2); break;
 
                         case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
                         case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;

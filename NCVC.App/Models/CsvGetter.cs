@@ -26,11 +26,11 @@ namespace NCVC.App.Models
             var timeFrames = ev.GetTimeFrames();
 
             bool flag = false;
-            var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, ev.GetMailSubject(), lastIndex, course.SecurityMode);
-            foreach (var (rowList, received, idx) in data)
+            var (data, index, count) = await GetCsvFromIMAP(course.ImapMailUserAccount, course.ImapMailUserPassword, course.ImapHost, course.ImapPort, lastIndex, course.SecurityMode, ev.GetMailSubject(), ev.GetMailInfectedSubject());
+            foreach (var (rowList, received, idx, isInfected) in data)
             {
                 var row = rowList.ToArray();
-                if (row.Count() < 16)
+                if ((!isInfected && row.Count() < 16) || (isInfected && row.Count() < 19))
                 {
                     continue;
                 }
@@ -83,7 +83,8 @@ namespace NCVC.App.Models
                         UploadedAt = received,
                         Student = student,
                         MailIndex = idx,
-                        TimeFrame = timeFrameName
+                        TimeFrame = timeFrameName,
+                        IsInfected = isInfected
                     };
                 }
                 else if(canOverride)
@@ -95,26 +96,74 @@ namespace NCVC.App.Models
                     health.TimeFrame = timeFrameName;
                     health.Student = student;
                     health.MailIndex = idx;
+                    health.IsInfected = isInfected;
                 }
                 if(health != null)
                 {
-                    if (!decimal.TryParse(row[3].Trim(), out var tmpr))
+                    if(!isInfected)
                     {
-                        tmpr = 0;
+                        if (!decimal.TryParse(row[3].Trim(), out var tmpr))
+                        {
+                            tmpr = 0;
+                        }
+                        health.BodyTemperature = tmpr;
+                        health.StringColumn1 = row[4].Trim();
+                        health.StringColumn2 = row[5].Trim();
+                        health.StringColumn3 = row[6].Trim();
+                        health.StringColumn4 = row[7].Trim();
+                        health.StringColumn5 = row[8].Trim();
+                        health.StringColumn6 = row[9].Trim();
+                        health.StringColumn7 = row[10].Trim();
+                        health.StringColumn8 = row[11].Trim();
+                        health.StringColumn9 = row[12].Trim();
+                        health.StringColumn10 = row[13].Trim();
+                        health.StringColumn11 = row[14].Trim();
+                        health.StringColumn12 = row[15].Trim();
                     }
-                    health.BodyTemperature = tmpr;
-                    health.StringColumn1 = row[4].Trim();
-                    health.StringColumn2 = row[5].Trim();
-                    health.StringColumn3 = row[6].Trim();
-                    health.StringColumn4 = row[7].Trim();
-                    health.StringColumn5 = row[8].Trim();
-                    health.StringColumn6 = row[9].Trim();
-                    health.StringColumn7 = row[10].Trim();
-                    health.StringColumn8 = row[11].Trim();
-                    health.StringColumn9 = row[12].Trim();
-                    health.StringColumn10 = row[13].Trim();
-                    health.StringColumn11 = row[14].Trim();
-                    health.StringColumn12 = row[15].Trim();
+                    else
+                    {
+                        if (!TimeSpan.TryParse(row[3].Trim(), out var time1))
+                        {
+                            time1 = new TimeSpan(0, 0, 0);
+                        }
+                        if (!decimal.TryParse(row[4].Trim(), out var tmpr1))
+                        {
+                            tmpr1 = 0;
+                        }
+                        if (string.IsNullOrWhiteSpace(row[5].Trim()) || !int.TryParse(row[5].Trim(), out var ox1))
+                        {
+                            ox1 = -1;
+                        }
+                        if (!TimeSpan.TryParse(row[6].Trim(), out var time2))
+                        {
+                            time2 = new TimeSpan(0, 0, 0);
+                        }
+                        if (!decimal.TryParse(row[7].Trim(), out var tmpr2))
+                        {
+                            tmpr2 = 0;
+                        }
+                        if (string.IsNullOrWhiteSpace(row[8].Trim()) || int.TryParse(row[8].Trim(), out var ox2))
+                        {
+                            ox2 = -1;
+                        }
+                        health.InfectedBodyTemperature1 = tmpr1;
+                        health.InfectedBodyTemperature2 = tmpr2;
+                        health.InfectedMeasuredTime1 = time1;
+                        health.InfectedMeasuredTime2 = time2;
+                        health.InfectedOxygenSaturation1 = ox1;
+                        health.InfectedOxygenSaturation2 = ox2;
+
+                        health.InfectedStringColumn1 = row[9].Trim();
+                        health.InfectedStringColumn2 = row[10].Trim();
+                        health.InfectedStringColumn3 = row[11].Trim();
+                        health.InfectedStringColumn4 = row[12].Trim();
+                        health.InfectedStringColumn5 = row[13].Trim();
+                        health.InfectedStringColumn6 = row[14].Trim();
+                        health.InfectedStringColumn7 = row[15].Trim();
+                        health.InfectedStringColumn8 = row[16].Trim();
+                        health.InfectedStringColumn9 = row[17].Trim();
+                        health.InfectedStringColumn10 = row[18].Trim();
+                    }
                     if (!existed)
                     {
                         context.Add(health);
@@ -144,11 +193,11 @@ namespace NCVC.App.Models
             return (index, data.Count());
         }
 
-        private static async Task<(IEnumerable<(IEnumerable<string>, DateTime, int)>, int, int)> GetCsvFromIMAP(string account, string password, string host, int port, string mail_subject, int min_index, string securityMode)
+        private static async Task<(IEnumerable<(IEnumerable<string>, DateTime, int, bool)>, int, int)> GetCsvFromIMAP(string account, string password, string host, int port, int min_index, string securityMode, string mail_subject, string mail_infected_subject)
         {
             int lastIndex = min_index;
             int count = 0;
-            var table = new List<(IEnumerable<string>, DateTime, int)>();
+            var table = new List<(IEnumerable<string>, DateTime, int, bool)>();
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
@@ -175,7 +224,7 @@ namespace NCVC.App.Models
                 messages = await inbox.FetchAsync(min_index + 1, -1, MessageSummaryItems.Envelope);
                 count = messages.Count();
                 lastIndex = count > 0 ? messages.Last().Index : -1;
-                foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(mail_subject)))
+                foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(mail_subject) || x.Envelope.Subject.Contains(mail_infected_subject)))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
                     var received = message.Date.DateTime;
@@ -192,7 +241,7 @@ namespace NCVC.App.Models
                                     {
                                         var line = r.ReadLine().Trim();
                                         var csv = line.Split(",").Select(x => x.Trim());
-                                        table.Add((csv, received, msg.Index));
+                                        table.Add((csv, received, msg.Index, msg.Envelope.Subject.Contains(mail_infected_subject)));
                                     }
                                 }
                             }
