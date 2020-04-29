@@ -237,6 +237,7 @@
         if (EV.IsShowUnsubmittedUsers())
         {
             sb.AppendLine("未提出: submitted==false");
+            sb.AppendLine("提出済: submitted==true");
         }
         EdittingModel.FilterButtons = sb.ToString();
 
