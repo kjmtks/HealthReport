@@ -227,20 +227,6 @@ namespace NCVC.App.Models
                 {
                     switch ((match.Groups["lhs"].Value, match.Groups["comp"].Value, match.Groups["rhs"].Value))
                     {
-                        case ("error", "==", string errorStr): if (bool.TryParse(errorStr, out bool error1)) HealthList = HealthList.Where(x => x.HasWrongValue() == error1); break;
-                        case ("error", "!=", string errorStr): if (bool.TryParse(errorStr, out bool error2)) HealthList = HealthList.Where(x => x.HasWrongValue() != error2); break;
-
-                        case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
-                        case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
-                        case ("user", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
-                        case ("user", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
-
-                        case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
-                        case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
-
-                        case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
-                        case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
-
                         case ("date", "==", string dateStr):
                             var date1 = parseDateRhs(dateStr);
                             if (date1.HasValue)
@@ -307,13 +293,6 @@ namespace NCVC.App.Models
                                 }
                             }
                             break;
-
-                        case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
-                        case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;
-                        case ("temp", "<=", string tempStr): if (decimal.TryParse(tempStr, out var temp3)) HealthList = HealthList.Where(x => x.BodyTemperature <= temp3); break;
-                        case ("temp", ">=", string tempStr): if (decimal.TryParse(tempStr, out var temp4)) HealthList = HealthList.Where(x => x.BodyTemperature >= temp4); break;
-                        case ("temp", "<", string tempStr): if (decimal.TryParse(tempStr, out var temp5)) HealthList = HealthList.Where(x => x.BodyTemperature < temp5); break;
-                        case ("temp", ">", string tempStr): if (decimal.TryParse(tempStr, out var temp6)) HealthList = HealthList.Where(x => x.BodyTemperature > temp6); break;
                     }
 
                 }
@@ -356,8 +335,29 @@ namespace NCVC.App.Models
                 {
                     switch ((match.Groups["lhs"].Value, match.Groups["comp"].Value, match.Groups["rhs"].Value))
                     {
+                        case ("error", "==", string errorStr): if (bool.TryParse(errorStr, out bool error1)) HealthList = HealthList.Where(x => x.HasWrongValue() == error1); break;
+                        case ("error", "!=", string errorStr): if (bool.TryParse(errorStr, out bool error2)) HealthList = HealthList.Where(x => x.HasWrongValue() != error2); break;
+
+                        case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
+                        case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
+
+                        case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
+                        case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
+                        case ("user", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
+                        case ("user", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
+
+                        case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
+                        case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
+
                         case ("submitted", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted1)) HealthList = HealthList.Where(x => !x.IsEmptyData == submitted1); break;
                         case ("submitted", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted2)) HealthList = HealthList.Where(x => !x.IsEmptyData != submitted2); break;
+
+                        case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
+                        case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;
+                        case ("temp", "<=", string tempStr): if (decimal.TryParse(tempStr, out var temp3)) HealthList = HealthList.Where(x => x.BodyTemperature <= temp3); break;
+                        case ("temp", ">=", string tempStr): if (decimal.TryParse(tempStr, out var temp4)) HealthList = HealthList.Where(x => x.BodyTemperature >= temp4); break;
+                        case ("temp", "<", string tempStr): if (decimal.TryParse(tempStr, out var temp5)) HealthList = HealthList.Where(x => x.BodyTemperature < temp5); break;
+                        case ("temp", ">", string tempStr): if (decimal.TryParse(tempStr, out var temp6)) HealthList = HealthList.Where(x => x.BodyTemperature > temp6); break;
                     }
 
                 }
