@@ -227,8 +227,8 @@ Google Forms などを使用して収集したデータを一括登録するこ�
     * `thisweek+n`: 直前の月曜日の 7n 日後の年月日
     * `thisweek-n`: 直前の月曜日の 7n 日前の年月日
     * `thismonth`: 当日の年月日
-    * `thismonth+n`: 当月 1 日の n 日後の年月日
-    * `thismonth-n`: 当月 1 日の n 日前の年月日
+    * `thismonth+n`: 当月 1 日の n ヶ月後の年月日
+    * `thismonth-n`: 当月 1 日の n ヶ月前の年月日
 * 異常の有無: `error==真偽値`, `error!=真偽値`
   * 真偽値は `true` または `false`
 * 時間帯: `timeframe==時間帯`, `timeframe!=時間帯`
