@@ -221,6 +221,8 @@ namespace NCVC.App.Models
 
                         case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
                         case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
+                        case ("user", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
+                        case ("user", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
 
                         case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
                         case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;

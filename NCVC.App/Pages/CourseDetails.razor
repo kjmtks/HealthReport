@@ -317,7 +317,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        order = $"{order} student";
+        order = $"{order} user";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -325,7 +325,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        order = $"{order} ~student";
+        order = $"{order} ~user";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -371,9 +371,10 @@
         {
             condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
         }
-        if(expr.Contains("student"))
+        if(expr.Contains("student") || expr.Contains("user"))
         {
             condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("user")).Select(x => x.Trim()));
         }
         if(expr.Contains("date"))
         {
@@ -400,7 +401,7 @@
     {
         var (condition, order) = GetConditionAndOrder();
         condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        condition = $"{condition} student=={student.Account}";
+        condition = $"{condition} user=={student.Account}";
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
