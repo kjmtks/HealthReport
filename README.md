@@ -103,8 +103,7 @@ $ make production-down
 
 ### HTTPでの実行
 
-`docker-compose.production.yaml` を修正することで，HTTPで実行することもできます．
-証明書等は不要です．
+HTTPで実行することもできます．証明書等は不要です．
 ローカルネットワークで運用し，本システム利用者（管理者）を限定できる場合はHTTPで問題ないと思います．
 
 docker と docker-compose をインストール後、以下のコマンドを実行してください。
@@ -114,8 +113,7 @@ docker と docker-compose をインストール後、以下のコマンドを実
 ```
 $ git clone https://github.com/kjmtks/HealthReport.git
 $ cd HealthReport
-$ vim docker-compose.production.default.yaml
-(or $ vim docker-compose.production.override.yaml)
+$ vim docker-compose.production.http.yaml
 ```
 
 2. 起動
