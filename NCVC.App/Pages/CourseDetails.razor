@@ -87,15 +87,23 @@
                         <tbody>
                             @foreach (var health in Pagination.ShowedModels)
                             {
-                                <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : ""))">
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
-                                    @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
-                                    {
-                                        <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
-                                    }
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
-                                    <td>@health.Student.Name</td>
+                            <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : (health.IsEmptyData ? "disabled" : "")))">
+                                <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                                {
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                }
+                                <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
+                                <td>@health.Student.Name</td>
 
+                                @if (health.IsEmptyData)
+                                {
+                                    <td colspan="14">
+                                        未提出
+                                    </td>
+                                }
+                                else
+                                {
                                     <td>
                                         @if (health.IsWrongBodyTemperature())
                                         {<i class="attention icon"></i> }
@@ -164,7 +172,8 @@
                                         @health.StringColumn12
                                     </td>
                                     <td>@health.UploadedAt.ToString()</td>
-                                </tr>
+                                }
+                            </tr>
                             }
                         </tbody>
                     </table>
@@ -178,10 +187,17 @@
 
             <div class="ui basic segment">
                 <div class="ui menu top attached">
-                    <span class="item">未提出の観察対象者 (@(ussDate.ToShortDateString()))</span>
-                    <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
-                    <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
-                    <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
+                    @if (EV.IsShowUnsubmittedUsers())
+                    {
+                        <span class="item">未登録の観察対象者</span>
+                    }
+                    else
+                    {
+                        <span class="item">未提出の観察対象者 (@(ussDate.ToShortDateString()))</span>
+                        <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
+                        <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
+                        <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
+                    }
                 </div>
                 <table class="ui very compact table bottom attached">
                     <thead>
@@ -192,12 +208,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var s in Health.UnsubmittedStudents(DB.Context, id, ussDate))
+                        @if (!EV.IsShowUnsubmittedUsers())
                         {
-                            <tr>
-                                <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
-                                <td>@s.Name</td>
-                            </tr>
+                            @foreach (var s in Health.UnsubmittedStudents(DB.Context, id, ussDate))
+                            {
+                                <tr>
+                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
+                                    <td>@s.Name</td>
+                                </tr>
+                            }
                         }
                         @foreach (var a in Health.UnregisteredAccounts(DB.Context, id))
                         {
@@ -265,7 +284,7 @@
 
                 var today = DateTime.Today;
                 var condition = $"date==today";
-                var order = "student";
+                var order = "user";
                 SetConditionAndOrder(condition, order);
                 HealthList = Health.Search(DB.Context, EV, id, FilterString);
                 //HealthList = DB.Context.HealthList.Include(x => x.Student).Where(x => x.CourseId == id).OrderBy(x => x.MeasuredAt);
@@ -367,11 +386,15 @@
     protected void SetFiltering(string expr)
     {
         var (condition, order) = GetConditionAndOrder();
-        if(expr.Contains("error"))
+        if (expr.Contains("error"))
         {
             condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
         }
-        if(expr.Contains("student") || expr.Contains("user"))
+        if (expr.Contains("submitted"))
+        {
+            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("submitted")).Select(x => x.Trim()));
+        }
+        if (expr.Contains("student") || expr.Contains("user"))
         {
             condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
             condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("user")).Select(x => x.Trim()));

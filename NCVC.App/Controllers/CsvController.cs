@@ -54,7 +54,7 @@ namespace NCVC.App.Controllers
 
                 using (var w = new StreamWriter(ms, Encoding.GetEncoding("Shift_JIS")))
                 {
-                    w.Write("アカウント,");
+                    w.Write("観察者番号,");
                     w.Write("名前,");
                     w.Write("日付,");
                     if (hasTimeFrames)
@@ -84,19 +84,26 @@ namespace NCVC.App.Controllers
                         {
                             w.Write($"{health.TimeFrame},");
                         }
-                        w.Write($"{health.BodyTemperature},");
-                        w.Write($"{health.StringColumn1},");
-                        w.Write($"{health.StringColumn2},");
-                        w.Write($"{health.StringColumn3},");
-                        w.Write($"{health.StringColumn4},");
-                        w.Write($"{health.StringColumn5},");
-                        w.Write($"{health.StringColumn6},");
-                        w.Write($"{health.StringColumn7},");
-                        w.Write($"{health.StringColumn8},");
-                        w.Write($"{health.StringColumn9},");
-                        w.Write($"{health.StringColumn10},");
-                        w.Write($"{health.StringColumn11},");
-                        w.Write($"{health.StringColumn12},");
+                        if(health.IsEmptyData)
+                        {
+                            w.Write($",,,,,,,,,,,,,");
+                        }
+                        else
+                        {
+                            w.Write($"{health.BodyTemperature},");
+                            w.Write($"{health.StringColumn1},");
+                            w.Write($"{health.StringColumn2},");
+                            w.Write($"{health.StringColumn3},");
+                            w.Write($"{health.StringColumn4},");
+                            w.Write($"{health.StringColumn5},");
+                            w.Write($"{health.StringColumn6},");
+                            w.Write($"{health.StringColumn7},");
+                            w.Write($"{health.StringColumn8},");
+                            w.Write($"{health.StringColumn9},");
+                            w.Write($"{health.StringColumn10},");
+                            w.Write($"{health.StringColumn11},");
+                            w.Write($"{health.StringColumn12},");
+                        }
                         w.WriteLine();
                     }
                 }

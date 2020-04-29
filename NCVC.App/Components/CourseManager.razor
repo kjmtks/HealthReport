@@ -6,6 +6,7 @@
 @inject DatabaseService DB;
 @inject IConfiguration Config;
 @inject NotifierService Notifier;
+@inject EnvironmentVariableService EV;
 @implements IDisposable;
 
 
@@ -221,7 +222,8 @@
     protected async Task OpenCreate()
     {
         EdittingModel = new Course();
-        EdittingModel.FilterButtons = @"異常あり: error==true
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine(@"異常あり: error==true
 体温37.0℃以上: temp>=37.0
 体温37.5℃以上: temp>=37.5
 直近4日: date>today-4 date<=today
@@ -231,7 +233,12 @@
 今週: date>=thisweek date<thisweek+1
 先月: date>=thismonth-1 date<thismonth
 今月: date>=thismonth date<thismonth+1
-要注目: tag==要注目";
+要注目: tag==要注目");
+        if (EV.IsShowUnsubmittedUsers())
+        {
+            sb.AppendLine("未提出: submitted==false");
+        }
+        EdittingModel.FilterButtons = sb.ToString();
 
         Mode = EditMode.CreateNew;
         ResetEdittingModel();

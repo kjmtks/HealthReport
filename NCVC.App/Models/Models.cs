@@ -122,7 +122,7 @@ namespace NCVC.App.Models
 
         public bool HasTag(string tag)
         {
-            return Tags.Split().Contains(tag);
+            return Tags?.Split()?.Contains(tag) ?? false;
         }
 
         public static (bool, string) LdapAuthenticate(string account, string password)

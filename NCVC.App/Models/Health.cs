@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using NCVC.App.Services;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NCVC.App.Models
 {
@@ -42,22 +43,24 @@ namespace NCVC.App.Models
         public int StudentId { get; set; }
         public virtual Student Student { get; set; }
 
+        [NotMapped]
+        public bool IsEmptyData { get; set; } = false;
 
 
-        public bool IsWrongBodyTemperature() => BodyTemperature >= (decimal)37.5;
-        public bool IsWarnBodyTemperature() => BodyTemperature >= (decimal)37;
-        public bool IsWrongStringColumn1() => StringColumn1 != "無" && StringColumn1 != "N";
-        public bool IsWrongStringColumn2() => StringColumn2 != "無" && StringColumn2 != "N";
-        public bool IsWrongStringColumn3() => StringColumn3 != "無" && StringColumn3 != "N";
-        public bool IsWrongStringColumn4() => StringColumn4 != "無" && StringColumn4 != "N";
-        public bool IsWrongStringColumn5() => StringColumn5 != "無" && StringColumn5 != "N";
-        public bool IsWrongStringColumn6() => StringColumn6 != "無" && StringColumn6 != "N";
-        public bool IsWrongStringColumn7() => StringColumn7 != "無" && StringColumn7 != "N";
-        public bool IsWrongStringColumn8() => StringColumn8 != "無" && StringColumn8 != "N";
-        public bool IsWrongStringColumn9() => !string.IsNullOrWhiteSpace(StringColumn9);
-        public bool IsWrongStringColumn10() => StringColumn10 != "N";
-        public bool IsWrongStringColumn11() => StringColumn11 != "N";
-        public bool IsWrongStringColumn12() => !string.IsNullOrWhiteSpace(StringColumn12);
+        public bool IsWrongBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37.5;
+        public bool IsWarnBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37;
+        public bool IsWrongStringColumn1() => !IsEmptyData && StringColumn1 != "無" && StringColumn1 != "N";
+        public bool IsWrongStringColumn2() => !IsEmptyData && StringColumn2 != "無" && StringColumn2 != "N";
+        public bool IsWrongStringColumn3() => !IsEmptyData && StringColumn3 != "無" && StringColumn3 != "N";
+        public bool IsWrongStringColumn4() => !IsEmptyData && StringColumn4 != "無" && StringColumn4 != "N";
+        public bool IsWrongStringColumn5() => !IsEmptyData && StringColumn5 != "無" && StringColumn5 != "N";
+        public bool IsWrongStringColumn6() => !IsEmptyData && StringColumn6 != "無" && StringColumn6 != "N";
+        public bool IsWrongStringColumn7() => !IsEmptyData && StringColumn7 != "無" && StringColumn7 != "N";
+        public bool IsWrongStringColumn8() => !IsEmptyData && StringColumn8 != "無" && StringColumn8 != "N";
+        public bool IsWrongStringColumn9() => !IsEmptyData && !string.IsNullOrWhiteSpace(StringColumn9);
+        public bool IsWrongStringColumn10() => !IsEmptyData && StringColumn10 != "N";
+        public bool IsWrongStringColumn11() => !IsEmptyData && StringColumn11 != "N";
+        public bool IsWrongStringColumn12() => !IsEmptyData && !string.IsNullOrWhiteSpace(StringColumn12);
         public bool HasWarnValue() => IsWarnBodyTemperature();
         public bool HasWrongValue() => IsWrongBodyTemperature()
             | IsWrongStringColumn1()
@@ -74,13 +77,22 @@ namespace NCVC.App.Models
             | IsWrongStringColumn12();
 
 
-        public static IEnumerable<Student> UnsubmittedStudents(DatabaseContext context, int courseId, DateTime date)
+        public static IEnumerable<Student> UnsubmittedStudents(DatabaseContext context, int courseId, DateTime date, TimeFrame timeframe = null)
         {
             var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
             var students = course.AssignedStudentAccounts();
-            var xs = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt == date).Select(x => x.Student.Account).ToArray();
 
-            var unsubmitted = students.Except(xs);
+            string[] existedStudents;
+            if(timeframe != null)
+            {
+                existedStudents = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt == date && x.TimeFrame == timeframe.Name).Select(x => x.Student.Account).ToArray();
+            }
+            else
+            {
+                existedStudents = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt == date).Select(x => x.Student.Account).ToArray();
+            }
+
+            var unsubmitted = students.Except(existedStudents);
             return context.Students.Where(x => unsubmitted.Contains(x.Account)).OrderBy(x => x.Account);
         }
         public static IEnumerable<string> UnregisteredAccounts(DatabaseContext context, int courseId)
@@ -197,16 +209,15 @@ namespace NCVC.App.Models
             }
 
             var days = ev.GetNumOfDaysToSearch();
-            IEnumerable<Health> HealthList;
-            if (days < 0)
-            {
-                HealthList = context.HealthList.Include(x => x.Student).OrderBy(x => x.MeasuredAt).AsNoTracking();
-            }
-            else
+            IQueryable<Health> list = context.HealthList.Include(x => x.Student);
+            if (days >= 0)
             {
                 var d = DateTime.Today.AddDays(-days);
-                HealthList = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt > d).OrderBy(x => x.MeasuredAt).AsNoTracking();
+                list = list.Where(x => x.MeasuredAt > d);
             }
+            IEnumerable<Health> HealthList = list.AsNoTracking();
+
+            bool includeToday = true;
 
             var parser = new Regex("^(?<lhs>[a-zA-Z0-9./]+)(?<comp>(==|!=|<=|>=|<|>))(?<rhs>[^>=<!\\s]+)$");
             var matches = condition.Split(" ").Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => parser.Match(x)).Where(x => x.Success);
@@ -230,12 +241,72 @@ namespace NCVC.App.Models
                         case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
                         case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
 
-                        case ("date", "==", string dateStr): var date1 = parseDateRhs(dateStr); if (date1.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt == date1); } break;
-                        case ("date", "!=", string dateStr): var date2 = parseDateRhs(dateStr); if (date2.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt != date2); } break;
-                        case ("date", "<=", string dateStr): var date3 = parseDateRhs(dateStr); if (date3.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt <= date3); } break;
-                        case ("date", ">=", string dateStr): var date4 = parseDateRhs(dateStr); if (date4.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt >= date4); } break;
-                        case ("date", "<", string dateStr): var date5 = parseDateRhs(dateStr); if (date5.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt < date5); } break;
-                        case ("date", ">", string dateStr): var date6 = parseDateRhs(dateStr); if (date6.HasValue) { HealthList = HealthList.Where(x => x.MeasuredAt > date6); } break;
+                        case ("date", "==", string dateStr):
+                            var date1 = parseDateRhs(dateStr);
+                            if (date1.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt == date1);
+                                if (date1 != DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
+                        case ("date", "!=", string dateStr):
+                            var date2 = parseDateRhs(dateStr);
+                            if (date2.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt != date2);
+                                if (date2 == DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
+                        case ("date", "<=", string dateStr):
+                            var date3 = parseDateRhs(dateStr);
+                            if (date3.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt <= date3);
+                                if (date3 < DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
+                        case ("date", ">=", string dateStr):
+                            var date4 = parseDateRhs(dateStr);
+                            if (date4.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt >= date4);
+                                if(date4 > DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
+                        case ("date", "<", string dateStr):
+                            var date5 = parseDateRhs(dateStr);
+                            if (date5.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt < date5);
+                                if (date5 <= DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
+                        case ("date", ">", string dateStr):
+                            var date6 = parseDateRhs(dateStr);
+                            if (date6.HasValue)
+                            {
+                                HealthList = HealthList.Where(x => x.MeasuredAt > date6);
+                                if (date6 >= DateTime.Today)
+                                {
+                                    includeToday = false;
+                                }
+                            }
+                            break;
 
                         case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
                         case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;
@@ -247,6 +318,51 @@ namespace NCVC.App.Models
 
                 }
             }
+
+            if (ev.IsShowUnsubmittedUsers())
+            {
+                var emptyHealthList = new List<Health>();
+                var tfs = ev.GetTimeFrames() ?? new TimeFrame[] { null };
+                var dates = HealthList.Select(x => x.MeasuredAt);
+                if (includeToday || dates.Count() > 0)
+                {
+                    var dt = dates.Count() == 0 ? DateTime.Today : dates.Min();
+                    var dmax = includeToday ? DateTime.Today : dates.Max();
+                    while (dt <= dmax)
+                    {
+                        foreach (var tf in tfs)
+                        {
+                            foreach (var s in UnsubmittedStudents(context, courseId, dt, tf))
+                            {
+                                var h = new Health()
+                                {
+                                    IsEmptyData = true,
+                                    MeasuredAt = dt,
+                                    TimeFrame = tf?.Name ?? "",
+                                    Student = s
+                                };
+                                emptyHealthList.Add(h);
+                            }
+                        }
+                        dt = dt.AddDays(1);
+                    }
+                }
+                HealthList = HealthList.Concat(emptyHealthList);
+            }
+
+            foreach (var match in matches)
+            {
+                if (match.Groups.ContainsKey("lhs") && match.Groups["lhs"].Success && !string.IsNullOrWhiteSpace(match.Groups["lhs"].Value))
+                {
+                    switch ((match.Groups["lhs"].Value, match.Groups["comp"].Value, match.Groups["rhs"].Value))
+                    {
+                        case ("submitted", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted1)) HealthList = HealthList.Where(x => !x.IsEmptyData == submitted1); break;
+                        case ("submitted", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted2)) HealthList = HealthList.Where(x => !x.IsEmptyData != submitted2); break;
+                    }
+
+                }
+            }
+            HealthList = HealthList.OrderBy(x => x.MeasuredAt).ThenBy(xs => xs.TimeFrame).ThenBy(x => x.Student.Account);
 
             if (!string.IsNullOrWhiteSpace(order))
             {
@@ -260,6 +376,7 @@ namespace NCVC.App.Models
                         if (firstSort)
                         {
                             if (match.Groups["asc"].Value == "student") OrderedHealthList = HealthList.OrderBy(x => x.Student.Account);
+                            if (match.Groups["asc"].Value == "user") OrderedHealthList = HealthList.OrderBy(x => x.Student.Account);
                             if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = HealthList.OrderBy(x => x.TimeFrame);
                             if (match.Groups["asc"].Value == "date") OrderedHealthList = HealthList.OrderBy(x => x.MeasuredAt);
                             if (match.Groups["asc"].Value == "temp") OrderedHealthList = HealthList.OrderBy(x => x.BodyTemperature);
@@ -268,6 +385,7 @@ namespace NCVC.App.Models
                         else
                         {
                             if (match.Groups["asc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenBy(x => x.Student.Account);
+                            if (match.Groups["asc"].Value == "user") OrderedHealthList = OrderedHealthList.ThenBy(x => x.Student.Account);
                             if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenBy(x => x.TimeFrame);
                             if (match.Groups["asc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenBy(x => x.MeasuredAt);
                             if (match.Groups["asc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenBy(x => x.BodyTemperature);
@@ -280,6 +398,7 @@ namespace NCVC.App.Models
                         if (firstSort)
                         {
                             if (match.Groups["dsc"].Value == "student") OrderedHealthList = HealthList.OrderByDescending(x => x.Student.Account);
+                            if (match.Groups["dsc"].Value == "user") OrderedHealthList = HealthList.OrderByDescending(x => x.Student.Account);
                             if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = HealthList.OrderByDescending(x => x.TimeFrame);
                             if (match.Groups["dsc"].Value == "date") OrderedHealthList = HealthList.OrderByDescending(x => x.MeasuredAt);
                             if (match.Groups["dsc"].Value == "temp") OrderedHealthList = HealthList.OrderByDescending(x => x.BodyTemperature);
@@ -288,6 +407,7 @@ namespace NCVC.App.Models
                         else
                         {
                             if (match.Groups["dsc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.Student.Account);
+                            if (match.Groups["dsc"].Value == "user") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.Student.Account);
                             if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.TimeFrame);
                             if (match.Groups["dsc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.MeasuredAt);
                             if (match.Groups["dsc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.BodyTemperature);
@@ -296,7 +416,7 @@ namespace NCVC.App.Models
                         firstSort = false;
                     }
                 }
-                if (!firstSort)
+                if (!firstSort && OrderedHealthList != null)
                 {
                     HealthList = OrderedHealthList.ToArray();
                 }

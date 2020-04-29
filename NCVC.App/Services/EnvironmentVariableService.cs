@@ -28,6 +28,11 @@ namespace NCVC.App.Services
             return Environment.GetEnvironmentVariable("SUBDIR") ?? "";
         }
 
+        public bool IsShowUnsubmittedUsers()
+        {
+            return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SHOW_UNSUBMITTED_USERS"));
+        }
+
         public int GetNumOfDaysToSearch()
         {
             if(int.TryParse(Environment.GetEnvironmentVariable("DAYS_TO_SEARCH"), out var days))
