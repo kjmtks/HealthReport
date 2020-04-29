@@ -27,7 +27,7 @@
 
             <div class="ui basic segment">
                 <div class="ui menu top attached">
-                    <a class="item" @onclick='() => { FilterString = ""; Filter(""); }'>絞り込みリセット</a>
+                    <a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a>
                     @foreach (var button in (Course.FilterButtons ?? "").Split(new[]{"\r\n","\n","\r"},StringSplitOptions.None))
                     {
                         var xs = button.Split(":", 2);
@@ -87,7 +87,7 @@
                         <tbody>
                             @foreach (var health in Pagination.ShowedModels)
                             {
-                            <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : (health.IsEmptyData ? "disabled" : "")))">
+                            <tr class="@(health.HasWrongValue() ? "negative" : (health.HasWarnValue() ? "warning" : (health.IsEmptyData ? "active" : "")))">
                                 <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
                                 @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                 {
