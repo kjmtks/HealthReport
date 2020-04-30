@@ -71,7 +71,7 @@ namespace NCVC.App.Models
                     timeFrameName = timeFrames?.LastOrDefault().Name ?? "";
                 }
 
-                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && x.TimeFrame == timeFrameName).FirstOrDefault();
+                var health = context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && (isInfected || x.TimeFrame == timeFrameName)).FirstOrDefault();
                 var existed = health != null;
                 if (!existed)
                 {
@@ -83,7 +83,6 @@ namespace NCVC.App.Models
                         UploadedAt = received,
                         Student = student,
                         MailIndex = idx,
-                        TimeFrame = timeFrameName,
                         IsInfected = isInfected
                     };
                 }
@@ -93,7 +92,6 @@ namespace NCVC.App.Models
                     health.RawUserName = name;
                     health.MeasuredAt = date;
                     health.UploadedAt = received;
-                    health.TimeFrame = timeFrameName;
                     health.Student = student;
                     health.MailIndex = idx;
                     health.IsInfected = isInfected;
@@ -106,6 +104,7 @@ namespace NCVC.App.Models
                         {
                             tmpr = 0;
                         }
+                        health.TimeFrame = timeFrameName;
                         health.BodyTemperature = tmpr;
                         health.StringColumn1 = row[4].Trim();
                         health.StringColumn2 = row[5].Trim();

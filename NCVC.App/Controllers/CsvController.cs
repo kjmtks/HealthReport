@@ -145,10 +145,6 @@ namespace NCVC.App.Controllers
                     w.Write("観察者番号,");
                     w.Write("名前,");
                     w.Write("日付,");
-                    if (hasTimeFrames)
-                    {
-                        w.Write("時間帯,");
-                    }
                     w.Write("記録時刻1回目,");
                     w.Write("体温1回目,");
                     w.Write("酸素飽和度1回目,");
@@ -171,10 +167,6 @@ namespace NCVC.App.Controllers
                         w.Write($"{health.Student.Account},");
                         w.Write($"{health.Student.Name},");
                         w.Write($"{health.MeasuredAt.ToShortDateString()},");
-                        if (hasTimeFrames)
-                        {
-                            w.Write($"{health.TimeFrame},");
-                        }
                         if(health.IsEmptyData)
                         {
                             w.Write($",,,,,,,,,,,,,,,,");

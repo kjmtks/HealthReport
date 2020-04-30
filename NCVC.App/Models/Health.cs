@@ -327,9 +327,11 @@ namespace NCVC.App.Models
                     var dmax = includeToday ? DateTime.Today : dates.Max();
                     while (dt <= dmax)
                     {
+                        var infected_user_ids = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt == dt && x.IsInfected).Select(x => x.Student.Id).ToList();
+
                         foreach (var tf in tfs)
                         {
-                            foreach (var s in UnsubmittedStudents(context, courseId, dt, tf))
+                            foreach (var s in UnsubmittedStudents(context, courseId, dt, tf).Where(x => !infected_user_ids.Contains(x.Id)))
                             {
                                 var h = new Health()
                                 {
