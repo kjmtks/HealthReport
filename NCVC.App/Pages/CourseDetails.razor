@@ -36,15 +36,6 @@
                     {
                         <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
                     }
-                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
-                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
-                    {
-                        var xs = button.Split(":", 2);
-                        if (xs.Count() >= 2)
-                        {
-                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
-                        }
-                    }
                     <div class="right menu">
                         <div class="item" style="width: 50em">
                             <div class="ui transparent icon input">
@@ -55,6 +46,20 @@
                         <div data-tooltip="結果をダウンロード"><a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a></div>
                     </div>
                 </div>
+
+                
+                <div class="ui menu attached">
+                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
+                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+                    {
+                        var xs = button.Split(":", 2);
+                        if (xs.Count() >= 2)
+                        {
+                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
+                        }
+                    }
+                </div>
+
                 <Paginated Collection="@HealthList" @ref="@Pagination" CssClass="attached" EntriesPerPage="100">
                     <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
                         <thead>
