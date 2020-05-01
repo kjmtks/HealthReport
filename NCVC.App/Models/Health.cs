@@ -207,6 +207,9 @@ namespace NCVC.App.Models
 
         public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
         {
+            var result = NCVC.Parser.QueryParser.ParseQuery(filterString);
+            Console.WriteLine(result?.Value);
+
             string condition = "", order = "";
             if (filterString.Contains("order by"))
             {

@@ -29,4 +29,7 @@
     <Folder Include="Migrations\" />
     <Folder Include="out\" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NCVC.Parser\NCVC.Parser.fsproj" />
+  </ItemGroup>
 </Project>
