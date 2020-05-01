@@ -223,21 +223,21 @@
     {
         EdittingModel = new Course();
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine(@"異常あり: error==true
-体温37.0℃以上: temp>=37.0
-体温37.5℃以上: temp>=37.5
-直近4日: date>today-4 date<=today
-昨日: date==today-1
-今日: date==today
-先週: date>=thisweek-1 date<thisweek
-今週: date>=thisweek date<thisweek+1
-先月: date>=thismonth-1 date<thismonth
-今月: date>=thismonth date<thismonth+1
-要注目: tag==要注目");
+        sb.AppendLine(@"異常あり: error
+体温37.0℃以上: temp >= 37.0
+体温37.5℃以上: temp >= 37.5
+直近4日: date > today - 4 && date <= today
+昨日: date == today - 1
+今日: date == today
+先週: date >= thisweek - 7 && date < thisweek
+今週: date >= thisweek && date < thisweek + 7
+先月: date >= thismonth - 1 && date < thismonth
+今月: date >= thismonth && date < thismonth + 1
+要注目: tag == ""要注目""");
         if (EV.IsShowUnsubmittedUsers())
         {
-            sb.AppendLine("未提出: submitted==false");
-            sb.AppendLine("提出済: submitted==true");
+            sb.AppendLine("未提出: !submitted");
+            sb.AppendLine("提出済: submitted");
         }
         EdittingModel.FilterButtons = sb.ToString();
 

@@ -79,7 +79,7 @@ namespace NCVC.App.Models
         public bool IsWrongStringColumn10() => !IsEmptyData && StringColumn10 != "N";
         public bool IsWrongStringColumn11() => !IsEmptyData && StringColumn11 != "N";
         public bool IsWrongStringColumn12() => !IsEmptyData && !string.IsNullOrWhiteSpace(StringColumn12);
-        public bool HasWarnValue() => IsWarnBodyTemperature();
+        public bool HasWarnValue() => IsWarnBodyTemperature() && !HasWrongValue();
         public bool HasWrongValue() => IsWrongBodyTemperature()
             | IsWrongStringColumn1()
             | IsWrongStringColumn2()
@@ -207,123 +207,17 @@ namespace NCVC.App.Models
 
         public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
         {
-            var result = NCVC.Parser.QueryParser.ParseQuery(filterString);
-            Console.WriteLine(result?.Value);
-
-            string condition = "", order = "";
-            if (filterString.Contains("order by"))
-            {
-                var str = filterString.Split("order by");
-                if (str.Count() == 2)
-                {
-                    order = str[0];
-                }
-                if (str.Count() >= 2)
-                {
-                    condition = str[0];
-                    order = str[1];
-                }
-            }
-            else
-            {
-                condition = filterString;
-            }
-
-            var days = ev.GetNumOfDaysToSearch();
-            IQueryable<Health> list = context.HealthList.Include(x => x.Student);
-            if (days >= 0)
-            {
-                var d = DateTime.Today.AddDays(-days);
-                list = list.Where(x => x.MeasuredAt > d);
-            }
-            IEnumerable<Health> HealthList = list.AsNoTracking();
-
-            bool includeToday = true;
-
-            var parser = new Regex("^(?<lhs>[a-zA-Z0-9./]+)(?<comp>(==|!=|<=|>=|<|>))(?<rhs>[^>=<!\\s]+)$");
-            var matches = condition.Split(" ").Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => parser.Match(x)).Where(x => x.Success);
-            foreach (var match in matches)
-            {
-                if (match.Groups.ContainsKey("lhs") && match.Groups["lhs"].Success && !string.IsNullOrWhiteSpace(match.Groups["lhs"].Value))
-                {
-                    switch ((match.Groups["lhs"].Value, match.Groups["comp"].Value, match.Groups["rhs"].Value))
-                    {
-                        case ("date", "==", string dateStr):
-                            var date1 = parseDateRhs(dateStr);
-                            if (date1.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt == date1);
-                                if (date1 != DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                        case ("date", "!=", string dateStr):
-                            var date2 = parseDateRhs(dateStr);
-                            if (date2.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt != date2);
-                                if (date2 == DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                        case ("date", "<=", string dateStr):
-                            var date3 = parseDateRhs(dateStr);
-                            if (date3.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt <= date3);
-                                if (date3 < DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                        case ("date", ">=", string dateStr):
-                            var date4 = parseDateRhs(dateStr);
-                            if (date4.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt >= date4);
-                                if(date4 > DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                        case ("date", "<", string dateStr):
-                            var date5 = parseDateRhs(dateStr);
-                            if (date5.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt < date5);
-                                if (date5 <= DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                        case ("date", ">", string dateStr):
-                            var date6 = parseDateRhs(dateStr);
-                            if (date6.HasValue)
-                            {
-                                HealthList = HealthList.Where(x => x.MeasuredAt > date6);
-                                if (date6 >= DateTime.Today)
-                                {
-                                    includeToday = false;
-                                }
-                            }
-                            break;
-                    }
-
-                }
-            }
+            var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
+            var students = course.AssignedStudentAccounts();
+            IEnumerable<Health> HealthList = context.HealthList.Include(x => x.Student).Where(x => students.Contains(x.Student.Account)).AsNoTracking(); ;
+            var fc = new FilterCompiler(filterString);
 
             if (ev.IsShowUnsubmittedUsers())
             {
                 var emptyHealthList = new List<Health>();
                 var tfs = ev.GetTimeFrames() ?? new TimeFrame[] { null };
                 var dates = HealthList.Select(x => x.MeasuredAt);
+                var includeToday = fc.IncludeToday();
                 if (includeToday || dates.Count() > 0)
                 {
                     var dt = dates.Count() == 0 ? DateTime.Today : dates.Min();
@@ -352,106 +246,10 @@ namespace NCVC.App.Models
                 HealthList = HealthList.Concat(emptyHealthList);
             }
 
-            foreach (var match in matches)
-            {
-                if (match.Groups.ContainsKey("lhs") && match.Groups["lhs"].Success && !string.IsNullOrWhiteSpace(match.Groups["lhs"].Value))
-                {
-                    switch ((match.Groups["lhs"].Value, match.Groups["comp"].Value, match.Groups["rhs"].Value))
-                    {
-                        case ("error", "==", string errorStr): if (bool.TryParse(errorStr, out bool error1)) HealthList = HealthList.Where(x => x.HasWrongValue() == error1); break;
-                        case ("error", "!=", string errorStr): if (bool.TryParse(errorStr, out bool error2)) HealthList = HealthList.Where(x => x.HasWrongValue() != error2); break;
-
-                        case ("timeframe", "==", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame == timeframe); break;
-                        case ("timeframe", "!=", string timeframe): HealthList = HealthList.Where(x => x.TimeFrame != timeframe); break;
-
-                        case ("student", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
-                        case ("student", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
-                        case ("user", "==", string student): HealthList = HealthList.Where(x => x.Student.Account.StartsWith(student)); break;
-                        case ("user", "!=", string student): HealthList = HealthList.Where(x => !x.Student.Account.StartsWith(student)); break;
-
-                        case ("tag", "==", string tag): HealthList = HealthList.Where(x => x.Student.HasTag(tag)); break;
-                        case ("tag", "!=", string tag): HealthList = HealthList.Where(x => !x.Student.HasTag(tag)); break;
-
-                        case ("submitted", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted1)) HealthList = HealthList.Where(x => !x.IsEmptyData == submitted1); break;
-                        case ("submitted", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool submitted2)) HealthList = HealthList.Where(x => !x.IsEmptyData != submitted2); break;
-
-                        case ("infected", "==", string submittedStr): if (bool.TryParse(submittedStr, out bool infected1)) HealthList = HealthList.Where(x => x.IsInfected == infected1); break;
-                        case ("infected", "!=", string submittedStr): if (bool.TryParse(submittedStr, out bool infected2)) HealthList = HealthList.Where(x => x.IsInfected != infected2); break;
-
-                        case ("temp", "==", string tempStr): if (decimal.TryParse(tempStr, out var temp1)) HealthList = HealthList.Where(x => x.BodyTemperature == temp1); break;
-                        case ("temp", "!=", string tempStr): if (decimal.TryParse(tempStr, out var temp2)) HealthList = HealthList.Where(x => x.BodyTemperature != temp2); break;
-                        case ("temp", "<=", string tempStr): if (decimal.TryParse(tempStr, out var temp3)) HealthList = HealthList.Where(x => x.BodyTemperature <= temp3); break;
-                        case ("temp", ">=", string tempStr): if (decimal.TryParse(tempStr, out var temp4)) HealthList = HealthList.Where(x => x.BodyTemperature >= temp4); break;
-                        case ("temp", "<", string tempStr): if (decimal.TryParse(tempStr, out var temp5)) HealthList = HealthList.Where(x => x.BodyTemperature < temp5); break;
-                        case ("temp", ">", string tempStr): if (decimal.TryParse(tempStr, out var temp6)) HealthList = HealthList.Where(x => x.BodyTemperature > temp6); break;
-                    }
-
-                }
-            }
+            HealthList = fc.Filtering(HealthList);
             HealthList = HealthList.OrderBy(x => x.MeasuredAt).ThenBy(xs => xs.TimeFrame).ThenBy(x => x.Student.Account);
-
-            if (!string.IsNullOrWhiteSpace(order))
-            {
-                bool firstSort = true;
-                IOrderedEnumerable<Health> OrderedHealthList = null;
-
-                foreach (var match in order.Split(" ").Select(x => Regex.Match(x, "^((?<asc>[a-zA-Z0-9]+)|~(?<dsc>[a-zA-Z0-9]+))$")).Where(x => x.Success))
-                {
-                    if (match.Groups.ContainsKey("asc") && match.Groups["asc"].Success && !string.IsNullOrWhiteSpace(match.Groups["asc"].Value))
-                    {
-                        if (firstSort)
-                        {
-                            if (match.Groups["asc"].Value == "student") OrderedHealthList = HealthList.OrderBy(x => x.Student.Account);
-                            if (match.Groups["asc"].Value == "user") OrderedHealthList = HealthList.OrderBy(x => x.Student.Account);
-                            if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = HealthList.OrderBy(x => x.TimeFrame);
-                            if (match.Groups["asc"].Value == "date") OrderedHealthList = HealthList.OrderBy(x => x.MeasuredAt);
-                            if (match.Groups["asc"].Value == "temp") OrderedHealthList = HealthList.OrderBy(x => x.BodyTemperature);
-                            if (match.Groups["asc"].Value == "error") OrderedHealthList = HealthList.OrderBy(x => x.HasWrongValue());
-                        }
-                        else
-                        {
-                            if (match.Groups["asc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenBy(x => x.Student.Account);
-                            if (match.Groups["asc"].Value == "user") OrderedHealthList = OrderedHealthList.ThenBy(x => x.Student.Account);
-                            if (match.Groups["asc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenBy(x => x.TimeFrame);
-                            if (match.Groups["asc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenBy(x => x.MeasuredAt);
-                            if (match.Groups["asc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenBy(x => x.BodyTemperature);
-                            if (match.Groups["asc"].Value == "error") OrderedHealthList = OrderedHealthList.ThenBy(x => x.HasWrongValue());
-                        }
-                        firstSort = false;
-                    }
-                    if (match.Groups.ContainsKey("dsc") && match.Groups["dsc"].Success && !string.IsNullOrWhiteSpace(match.Groups["dsc"].Value))
-                    {
-                        if (firstSort)
-                        {
-                            if (match.Groups["dsc"].Value == "student") OrderedHealthList = HealthList.OrderByDescending(x => x.Student.Account);
-                            if (match.Groups["dsc"].Value == "user") OrderedHealthList = HealthList.OrderByDescending(x => x.Student.Account);
-                            if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = HealthList.OrderByDescending(x => x.TimeFrame);
-                            if (match.Groups["dsc"].Value == "date") OrderedHealthList = HealthList.OrderByDescending(x => x.MeasuredAt);
-                            if (match.Groups["dsc"].Value == "temp") OrderedHealthList = HealthList.OrderByDescending(x => x.BodyTemperature);
-                            if (match.Groups["dsc"].Value == "error") OrderedHealthList = HealthList.OrderByDescending(x => x.HasWrongValue());
-                        }
-                        else
-                        {
-                            if (match.Groups["dsc"].Value == "student") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.Student.Account);
-                            if (match.Groups["dsc"].Value == "user") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.Student.Account);
-                            if (match.Groups["dsc"].Value == "timeframe") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.TimeFrame);
-                            if (match.Groups["dsc"].Value == "date") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.MeasuredAt);
-                            if (match.Groups["dsc"].Value == "temp") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.BodyTemperature);
-                            if (match.Groups["dsc"].Value == "error") OrderedHealthList = OrderedHealthList.ThenByDescending(x => x.HasWrongValue());
-                        }
-                        firstSort = false;
-                    }
-                }
-                if (!firstSort && OrderedHealthList != null)
-                {
-                    HealthList = OrderedHealthList.ToArray();
-                }
-            }
-
-            var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
-            var students = course.AssignedStudentAccounts();
-            var xs = HealthList.Where(x => students.Contains(x.Student.Account));
-            return xs;
+            HealthList = fc.Sort(HealthList);            
+            return HealthList;
         }
     }
 }

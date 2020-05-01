@@ -4,6 +4,17 @@ open FParsec
 
 module QueryParser =
 
+    type Reference =
+        | HasError
+        | HasWarning
+        | IsSubmitted
+        | IsInfected
+        | MeasuredDate
+        | BodyTemperature
+        | UserId
+        | TimeFrame
+        | HasTag
+
     type StringAtom =
         | UserId
         | TimeFrame
@@ -17,19 +28,11 @@ module QueryParser =
         | DecimalLiteral of decimal
     and DecimalExpr =
         | DecimalAtom of DecimalAtom
-        | DSum of DecimalExpr * DecimalExpr
-        | DSub of DecimalExpr * DecimalExpr
-        | DMul of DecimalExpr * DecimalExpr
-        | DDiv of DecimalExpr * DecimalExpr
-
-    type IntegerAtom =
-        | IntegerLiteral of int
-    and IntegerExpr =
-        | IntegerAtom of IntegerAtom
-        | ISum of IntegerExpr * IntegerExpr
-        | ISub of IntegerExpr * IntegerExpr
-        | IMul of IntegerExpr * IntegerExpr
-        | IDiv of IntegerExpr * IntegerExpr
+        | Minus of DecimalExpr
+        | Sum of DecimalExpr * DecimalExpr
+        | Sub of DecimalExpr * DecimalExpr
+        | Mul of DecimalExpr * DecimalExpr
+        | Div of DecimalExpr * DecimalExpr
 
     type DateAtom =
         | MeasuredDate
@@ -39,8 +42,8 @@ module QueryParser =
         | ThisMonth
     and DateExpr =
         | DateAtom of DateAtom
-        | AddDate of DateExpr * IntegerExpr
-        | ReduceDate of DateExpr * IntegerExpr
+        | AddDate of DateExpr * DecimalExpr
+        | ReduceDate of DateExpr * DecimalExpr
 
     type BooleanAtom =
         | HasError
@@ -51,18 +54,12 @@ module QueryParser =
         | False
         | SEq of StringExpr * StringExpr
         | SNe of StringExpr * StringExpr
-        | IEq of IntegerExpr * IntegerExpr
-        | INe of IntegerExpr * IntegerExpr
-        | IGt of IntegerExpr * IntegerExpr
-        | IGe of IntegerExpr * IntegerExpr
-        | ILt of IntegerExpr * IntegerExpr
-        | ILe of IntegerExpr * IntegerExpr
-        | DEq of DecimalExpr * DecimalExpr
-        | DNe of DecimalExpr * DecimalExpr
-        | DGt of DecimalExpr * DecimalExpr
-        | DGe of DecimalExpr * DecimalExpr
-        | DLt of DecimalExpr * DecimalExpr
-        | DLe of DecimalExpr * DecimalExpr
+        | DeEq of DecimalExpr * DecimalExpr
+        | DeNe of DecimalExpr * DecimalExpr
+        | DeGt of DecimalExpr * DecimalExpr
+        | DeGe of DecimalExpr * DecimalExpr
+        | DeLt of DecimalExpr * DecimalExpr
+        | DeLe of DecimalExpr * DecimalExpr
         | DtEq of DateExpr * DateExpr
         | DtNe of DateExpr * DateExpr
         | DtGt of DateExpr * DateExpr
@@ -77,14 +74,6 @@ module QueryParser =
         | Conj of BooleanExpr * BooleanExpr
         | Disj of BooleanExpr * BooleanExpr
         | Impl of BooleanExpr * BooleanExpr
-
-    and Expr =
-        | BooleanExpr of BooleanExpr
-        | StringExpr of StringExpr
-        | DateExpr of DateExpr
-        | DecimalExpr of DecimalExpr
-        | IntegerExpr of IntegerExpr
-    
 
     type SortingAttribute =
         | UserId
@@ -111,8 +100,6 @@ module QueryParser =
     let pbetweenParentheses_ws p = pchar '(' >>. spaces >>. p .>> spaces .>> pchar ')' .>> spaces
 
 
-    let pexpr, pexprImpl = createParserForwardedToRef ()
-
     // String parser
 
     let pstringUserId : Parser<StringAtom, UserState> = stringReturn "user" StringAtom.UserId
@@ -124,59 +111,6 @@ module QueryParser =
     let pstringAtom = 
         (attempt pstringUserId <|> attempt pstringTimeFrame <|> attempt pstringLiteral <|> pstringHasTag) .>> spaces
     let pstringExpr = pstringAtom |>> StringAtom
-
-
-    // Integer parser
-
-    let pintegerLiteral : Parser<(IntegerAtom), UserState> = pint16 |>> int |>> IntegerLiteral
-
-    let pintegerAtom : Parser<IntegerAtom, UserState> =
-        pintegerLiteral .>> spaces
-
-    let pintegerOp1 =
-        choice
-            [ pchar '+' .>> spaces >>% (fun x y -> ISum(x, y) )
-              pchar '-' .>> spaces >>% (fun x y -> ISub(x, y) ) ]
-    let pintegerOp2 =
-        choice
-            [ pchar '*' .>> spaces >>% (fun x y -> IMul(x, y) )
-              pchar '\\' .>> spaces >>% (fun x y -> IDiv(x, y) ) ]
-        
-    let pintegerExpr, pintegerExprImpl = createParserForwardedToRef ()
-    let pintegerFactor : Parser<IntegerExpr, UserState> =
-        attempt (pbetweenParentheses_ws pintegerExpr)
-        <|> (pintegerAtom |>> IntegerAtom)
-    let pintegerTerm : Parser<IntegerExpr, UserState> =
-        chainl1 pintegerFactor pintegerOp2
-    pintegerExprImpl :=
-        chainl1 pintegerTerm pintegerOp1
-    
-
-    // DateExpr parser
-
-    let pdateMeasuredDate : Parser<DateAtom, UserState> = stringReturn "date" DateAtom.MeasuredDate
-    let pdateLiteral : Parser<(DateAtom), UserState> =
-        pipe3 pint16 (pstring "/" >>. pint16) (pstring "/" >>. pint16) (fun y m d -> DateLiteral(int y, int m, int d))
-    let pdateToday : Parser<DateAtom, UserState> = stringReturn "today" Today
-    let pdateThisWeek : Parser<DateAtom, UserState> = stringReturn "thisweek" ThisWeek
-    let pdateThisMonth : Parser<DateAtom, UserState> = stringReturn "thismonth" ThisMonth
-
-    let pdateAtom : Parser<DateAtom, UserState> =
-        (attempt pdateLiteral <|> attempt pdateToday <|> attempt pdateThisWeek <|> attempt pdateThisMonth <|> pdateMeasuredDate) .>> spaces
-    
-    let pdateExpr, pdateExprImpl = createParserForwardedToRef ()
-    let pdateFactor : Parser<DateExpr, UserState> =
-        attempt (pbetweenParentheses_ws pdateExpr)
-        <|> (pdateAtom |>> DateAtom)
-    let pdateTerm : Parser<DateExpr, UserState> =
-        attempt (pipe2 pdateFactor (spaces >>. pchar '+' >>. spaces >>. pintegerExpr) (fun x y -> AddDate(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pchar '+' >>. spaces >>. pdateFactor) (fun x y -> AddDate(y, x)))
-        <|> attempt (pipe2 pdateFactor (spaces >>. pchar '-' >>. spaces >>. pintegerExpr) (fun x y -> ReduceDate(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pchar '+' >>. spaces >>. pdateFactor) (fun x y -> ReduceDate(y, x)))
-        <|> pdateFactor
-    pdateExprImpl :=
-        pdateTerm
-    
     
     // DecimalExpr parser
 
@@ -189,22 +123,48 @@ module QueryParser =
 
     let pdecimalOp1 =
         choice
-            [ pchar '+' .>> spaces >>% (fun x y -> DSum(x, y) )
-              pchar '-' .>> spaces >>% (fun x y -> DSub(x, y) ) ]
+            [ pchar '+' .>> spaces >>% (fun x y -> Sum(x, y) )
+              pchar '-' .>> spaces >>% (fun x y -> Sub(x, y) ) ]
     let pdecimalOp2 =
         choice
-            [ pchar '*' .>> spaces >>% (fun x y -> DMul(x, y) )
-              pchar '\\' .>> spaces >>% (fun x y -> DDiv(x, y) ) ]
+            [ pchar '*' .>> spaces >>% (fun x y -> Mul(x, y) )
+              pchar '\\' .>> spaces >>% (fun x y -> Div(x, y) ) ]
         
     let pdecimalExpr, pdecimalExprImpl = createParserForwardedToRef ()
     let pdecimalFactor : Parser<DecimalExpr, UserState> =
         attempt (pbetweenParentheses_ws pdecimalExpr)
+        <|> (pstring "-" >>. spaces >>. pdecimalExpr |>> Minus)
         <|> (pdecimalAtom |>> DecimalAtom)
     let pdecimalTerm : Parser<DecimalExpr, UserState> =
         chainl1 pdecimalFactor pdecimalOp2
     pdecimalExprImpl :=
         chainl1 pdecimalTerm pdecimalOp1
 
+        
+    // DateExpr parser
+
+    let pdateMeasuredDate : Parser<DateAtom, UserState> = stringReturn "date" DateAtom.MeasuredDate
+    let pdateLiteral : Parser<(DateAtom), UserState> =
+        pipe3 pint16 (pstring "/" >>. pint16) (pstring "/" >>. pint16) (fun y m d -> DateLiteral(int y, int m, int d))
+    let pdateToday : Parser<DateAtom, UserState> = stringReturn "today" Today
+    let pdateThisWeek : Parser<DateAtom, UserState> = stringReturn "thisweek" ThisWeek
+    let pdateThisMonth : Parser<DateAtom, UserState> = stringReturn "thismonth" ThisMonth
+
+    let pdateAtom : Parser<DateAtom, UserState> =
+        (attempt pdateLiteral <|> attempt pdateToday <|> attempt pdateThisWeek <|> attempt pdateThisMonth <|> pdateMeasuredDate) .>> spaces
+    let pdateExpr, pdateExprImpl = createParserForwardedToRef ()
+    let pdateFactor : Parser<DateExpr, UserState> =
+        attempt (pbetweenParentheses_ws pdateExpr)
+        <|> (pdateAtom |>> DateAtom)
+    let pdateTerm : Parser<DateExpr, UserState> =
+        attempt (pipe2 pdateFactor (spaces >>. pchar '+' >>. spaces >>. pdecimalExpr) (fun x y -> AddDate(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pchar '+' >>. spaces >>. pdateFactor) (fun x y -> AddDate(y, x)))
+        <|> attempt (pipe2 pdateFactor (spaces >>. pchar '-' >>. spaces >>. pdecimalExpr) (fun x y -> ReduceDate(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pchar '+' >>. spaces >>. pdateFactor) (fun x y -> ReduceDate(y, x)))
+        <|> pdateFactor
+    pdateExprImpl :=
+        pdateTerm
+    
 
     // Boolean parser
     let pbooleanExpr, pbooleanExprImpl = createParserForwardedToRef ()
@@ -236,18 +196,12 @@ module QueryParser =
         <|> attempt pbooleanIsInfected
         <|> attempt (pipe2 pstringExpr (spaces >>. pstring "==" >>. spaces >>. pstringExpr) (fun x y -> SEq(x, y)))
         <|> attempt (pipe2 pstringExpr (spaces >>. pstring "!=" >>. spaces >>. pstringExpr) (fun x y -> SNe(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring "==" >>. spaces >>. pintegerExpr) (fun x y -> IEq(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring "!=" >>. spaces >>. pintegerExpr) (fun x y -> INe(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring ">"  >>. spaces >>. pintegerExpr) (fun x y -> IGt(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring ">=" >>. spaces >>. pintegerExpr) (fun x y -> IGe(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring "<"  >>. spaces >>. pintegerExpr) (fun x y -> ILt(x, y)))
-        <|> attempt (pipe2 pintegerExpr (spaces >>. pstring "<=" >>. spaces >>. pintegerExpr) (fun x y -> ILe(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "==" >>. spaces >>. pdecimalExpr) (fun x y -> DEq(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "!=" >>. spaces >>. pdecimalExpr) (fun x y -> DNe(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring ">"  >>. spaces >>. pdecimalExpr) (fun x y -> DGt(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring ">=" >>. spaces >>. pdecimalExpr) (fun x y -> DGe(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "<"  >>. spaces >>. pdecimalExpr) (fun x y -> DLt(x, y)))
-        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "<=" >>. spaces >>. pdecimalExpr) (fun x y -> DLe(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "==" >>. spaces >>. pdecimalExpr) (fun x y -> DeEq(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "!=" >>. spaces >>. pdecimalExpr) (fun x y -> DeNe(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring ">"  >>. spaces >>. pdecimalExpr) (fun x y -> DeGt(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring ">=" >>. spaces >>. pdecimalExpr) (fun x y -> DeGe(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "<"  >>. spaces >>. pdecimalExpr) (fun x y -> DeLt(x, y)))
+        <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "<=" >>. spaces >>. pdecimalExpr) (fun x y -> DeLe(x, y)))
         <|> attempt (pipe2 pdateExpr (spaces >>. pstring "==" >>. spaces >>. pdateExpr) (fun x y -> DtEq(x, y)))
         <|> attempt (pipe2 pdateExpr (spaces >>. pstring "!=" >>. spaces >>. pdateExpr) (fun x y -> DtNe(x, y)))
         <|> attempt (pipe2 pdateExpr (spaces >>. pstring ">"  >>. spaces >>. pdateExpr) (fun x y -> DtGt(x, y)))
@@ -259,6 +213,7 @@ module QueryParser =
 
     let pbooleanFactor : Parser<BooleanExpr, UserState> =
         attempt (pbetweenParentheses_ws pbooleanExpr)
+        <|> (pstring "!" >>. spaces >>. pbooleanExpr |>> Neg)
         <|> (pbooleanAtom |>> BooleanAtom)
 
     let pbooleanTerm : Parser<BooleanExpr, UserState> = 
@@ -266,15 +221,6 @@ module QueryParser =
     pbooleanExprImpl :=
         chainl1 pbooleanTerm pbooleanOp1
 
-
-    // Expr parser
-
-    pexprImpl :=
-        attempt (pbooleanExpr |>> Expr.BooleanExpr)
-        <|> attempt (pdateExpr |>> Expr.DateExpr)
-        <|> attempt (pintegerExpr |>> Expr.IntegerExpr)
-        <|> attempt (pdecimalExpr |>> Expr.DecimalExpr)
-        <|> (pstringExpr |>> Expr.StringExpr)
 
 
     // Sorting parser
@@ -304,12 +250,82 @@ module QueryParser =
         sepBy pordering (pchar ',' .>> spaces)
 
     let pquery : Parser<Query, UserState> =
-        (
-        attempt (pipe2 pcondition (spaces >>. pstring "order by" >>. spaces >>. porderings) (fun x y -> (x, Some(y))))
-        <|> (pcondition |>> (fun x -> (x, None)))
-        ) .>> eof
+        spaces >>. 
+            (
+            attempt (pipe2 pcondition (spaces >>. pstring "order by" >>. spaces >>. porderings) (fun x y -> (x, Some(y))))
+            <|> (pcondition |>> (fun x -> (x, None)))
+            ) .>> eof
 
-    let ParseQuery query = 
-        match run pquery query with
-        | Success (result, _, _) -> Some(result)
-        | Failure (errmsg, _, _) -> None
+
+    // Functions
+
+    let ParseQuery queryString = 
+        match run pquery queryString with
+        | Success (query, _, _) -> Some(query)
+        | Failure (errmsg, _, _) ->
+            printfn "%s" errmsg
+            None
+
+
+    let GetReferences (expr : BooleanExpr) : Reference list =
+        let rec _booleanAtom (atom : BooleanAtom) (xs : Reference list) =
+            match atom with
+            | BooleanAtom.IsInfected -> Reference.IsInfected::xs
+            | BooleanAtom.IsSubmitted -> Reference.IsSubmitted::xs
+            | BooleanAtom.HasError -> Reference.HasError::xs
+            | BooleanAtom.HasWarning -> Reference.HasWarning::xs
+            | BooleanAtom.SEq (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
+            | BooleanAtom.SNe (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
+            | BooleanAtom.DeEq (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DeNe (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DeGt (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DeGe (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DeLt (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DeLe (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | BooleanAtom.DtEq (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | BooleanAtom.DtNe (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | BooleanAtom.DtGt (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | BooleanAtom.DtGe (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | BooleanAtom.DtLt (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | BooleanAtom.DtLe (lhs, rhs) -> (_dateExpr lhs xs) @ (_dateExpr rhs xs) @ xs
+            | _ -> xs
+        and _stringAtom (atom : StringAtom) (xs : Reference list) : Reference list =
+            match atom with
+            | StringAtom.UserId -> Reference.UserId::xs
+            | StringAtom.HasTag -> Reference.HasTag::xs
+            | StringAtom.TimeFrame -> Reference.TimeFrame::xs
+            | _ -> xs
+        and _decimalAtom (atom : DecimalAtom) (xs : Reference list) : Reference list =
+            match atom with
+            | DecimalAtom.BodyTemperature -> Reference.BodyTemperature::xs
+            | _ -> xs
+        and _dateAtom (atom : DateAtom) (xs : Reference list) : Reference list=
+            match atom with
+            | DateAtom.MeasuredDate -> Reference.MeasuredDate::xs
+            | _ -> xs
+        and _booleanExpr (expr : BooleanExpr) (xs : Reference list) : Reference list =
+            match expr with
+            | BooleanAtom atom -> (_booleanAtom atom xs) @ xs
+            | Eq (lhs, rhs) -> (_booleanExpr lhs xs) @ (_booleanExpr rhs xs) @ xs
+            | Ne (lhs, rhs) -> (_booleanExpr lhs xs) @ (_booleanExpr rhs xs) @ xs
+            | Neg inner -> (_booleanExpr inner xs) @ xs
+            | Conj (lhs, rhs) -> (_booleanExpr lhs xs) @ (_booleanExpr rhs xs) @ xs
+            | Disj (lhs, rhs) -> (_booleanExpr lhs xs) @ (_booleanExpr rhs xs) @ xs
+            | Impl (lhs, rhs) -> (_booleanExpr lhs xs) @ (_booleanExpr rhs xs) @ xs
+        and _stringExpr (expr : StringExpr) (xs : Reference list) : Reference list =
+            match expr with
+            | StringAtom atom -> (_stringAtom atom xs) @ xs
+        and _decimalExpr (expr : DecimalExpr) (xs : Reference list) : Reference list =
+            match expr with
+            | DecimalAtom atom -> (_decimalAtom atom xs) @ xs
+            | Sum (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | Sub (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | Mul (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | Div (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | Minus inner -> _decimalExpr inner xs
+        and _dateExpr (expr : DateExpr) (xs : Reference list) : Reference list =
+            match expr with
+            | DateAtom atom -> (_dateAtom atom xs) @ xs
+            | AddDate (lhs, rhs) -> (_dateExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+            | ReduceDate (lhs, rhs) -> (_dateExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
+        _booleanExpr expr []

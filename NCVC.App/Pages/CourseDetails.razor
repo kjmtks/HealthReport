@@ -444,19 +444,39 @@
         }
     }
 
+    protected string AddCondition(string condition)
+    {
+        var newQuery = NCVC.Parser.QueryParser.ParseQuery(condition);
+        if (newQuery?.Value == null)
+        {
+            return "";
+        }
+        var (oldConditionString, _) = GetConditionAndOrder();
+        var oldConditionExprs = oldConditionString.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x));
+        var newRefs = newQuery.Value.Item1.SelectMany(x => NCVC.Parser.QueryParser.GetReferences(x));
+        var cs = oldConditionExprs.Where(cndt =>
+        {
+            var query = NCVC.Parser.QueryParser.ParseQuery(cndt);
+            if (query?.Value == null) return false;
+            var refs = query.Value.Item1.SelectMany(x => NCVC.Parser.QueryParser.GetReferences(x));
+            return refs.Intersect(newRefs).Count() == 0;
+        }).Append(condition);
+        return string.Join(",", cs);
+    }
+
     protected void SetOrderStudent()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        order = $"{order} user";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("user")).Prepend("user");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
     protected void SetOrderDescStudent()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        order = $"{order} ~user";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("user")).Prepend("~user");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -464,16 +484,16 @@
     protected void SetOrderTimeFrame()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
-        order = $"{order} timeframe";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("timeframe")).Prepend("timeframe");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
     protected void SetOrderDescTimeFrame()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
-        order = $"{order} ~timeframe";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("timeframe")).Prepend("~timeframe");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
@@ -481,79 +501,47 @@
     protected void SetOrderDate()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        order = $"{order} date";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("date")).Prepend("date");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
     protected void SetOrderDescDate()
     {
         var (condition, order) = GetConditionAndOrder();
-        order = string.Join(" ", order.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        order = $"{order} ~date";
+        var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("date")).Prepend("~date");
+        order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
         Filter(FilterString);
     }
 
+
     protected void SetFiltering(string expr)
     {
-        var (condition, order) = GetConditionAndOrder();
-        if (expr.Contains("error"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("error")).Select(x => x.Trim()));
-        }
-        if (expr.Contains("submitted"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("submitted")).Select(x => x.Trim()));
-        }
-        if (expr.Contains("student") || expr.Contains("user"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("user")).Select(x => x.Trim()));
-        }
-        if(expr.Contains("date"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        }
-        if(expr.Contains("temp"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("temp")).Select(x => x.Trim()));
-        }
-        if(expr.Contains("timeframe"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
-        }
-        if(expr.Contains("tag"))
-        {
-            condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("tag")).Select(x => x.Trim()));
-        }
-        condition = $"{condition} {expr}";
-        SetConditionAndOrder(condition, order);
+        var (_, order) = GetConditionAndOrder();
+        SetConditionAndOrder(AddCondition(expr), order);
         Filter(FilterString);
     }
 
     protected void SetStudent(Student student)
     {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("student")).Select(x => x.Trim()));
-        condition = $"{condition} user=={student.Account}";
-        SetConditionAndOrder(condition, order);
+        var (_, order) = GetConditionAndOrder();
+        var expr = $"user == \"{student?.Account}\"";
+        SetConditionAndOrder(AddCondition(expr), order);
         Filter(FilterString);
     }
     protected void SetTimeFrame(string timeFrame)
     {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("timeframe")).Select(x => x.Trim()));
-        condition = $"{condition} timeframe=={timeFrame}";
-        SetConditionAndOrder(condition, order);
+        var (_, order) = GetConditionAndOrder();
+        var expr = $"timeframe == \"{timeFrame}\"";
+        SetConditionAndOrder(AddCondition(expr), order);
         Filter(FilterString);
     }
     protected void SetDate(DateTime date)
     {
-        var (condition, order) = GetConditionAndOrder();
-        condition = string.Join(" ", condition.Split(" ", StringSplitOptions.RemoveEmptyEntries).Where(x => !x.Contains("date")).Select(x => x.Trim()));
-        condition = $"{condition} date=={date.Year}/{date.Month}/{date.Day}";
-        SetConditionAndOrder(condition, order);
+        var (_, order) = GetConditionAndOrder();
+        var expr = $"date =={ date.Year}/{date.Month}/{date.Day}";
+        SetConditionAndOrder(AddCondition(expr), order);
         Filter(FilterString);
     }
 
