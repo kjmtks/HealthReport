@@ -252,7 +252,7 @@ DecimalExpr ::= <DecimalAtom>
               | "-" <DecimalExpr>
               | <DecimalExpr> ("+" | "-" | "*" | "\") <DecimalExpr>
 
-DateAtom ::= date | <date> | "today" | "thisweek" | "thismonth"
+DateAtom ::= "date" | <date> | "today" | "thisweek" | "thismonth"
 DateExpr ::= <DateAtom>
            | <DateExpr> ("+" | "-") <DecimalExpr> | <DecimalExpr> ("+" | "-") <DateExpr>
 
