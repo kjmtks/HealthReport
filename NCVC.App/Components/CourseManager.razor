@@ -48,7 +48,7 @@
                         <tr>
                             <td><a href="course/@model.Id">@model.Name</a></td>
                             <td>@model.EmailAddress</td>
-                            <td>@model.AssignedStudentAccounts().Count()</td>
+                            <td>@model.StudentAssignments.Count()</td>
                             @if (IsAdmin)
                             {
                                 <td class="right aligned">
@@ -196,7 +196,7 @@
     {
         var auth = await Auth.GetAuthenticationStateAsync();
         var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-        Collection = DB.Context.Courses.OrderBy(x => x.Name).ToArray().Where(x => IsAdmin || isTestMode || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name)) ?? new Course[] { };
+        Collection = DB.Context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).OrderBy(x => x.Name).ToArray().Where(x => IsAdmin || isTestMode || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name)) ?? new Course[] { };
     }
     public async Task OnNotify()
     {
@@ -253,6 +253,7 @@
     {
         BeforeModel = beforeModel;
         EdittingModel = beforeModel.GetEntityForEditOrRemove(DB.Context, Config);
+        EdittingModel.StudentAccounts = string.Join(" ", EdittingModel.StudentAssignments.Select(x => x.Student.Account));
         if (EdittingModel == null)
         {
             ErrorSubject = "Error";

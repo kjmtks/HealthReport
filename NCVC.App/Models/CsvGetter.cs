@@ -19,8 +19,8 @@ namespace NCVC.App.Models
     {
         public static async Task<(int, int)> LoadReceivedCsv(DatabaseContext context, EnvironmentVariableService ev, Course course, Staff operaotr, int lastIndex)
         {
-            course = context.Courses.Where(x => x.Id == course.Id).FirstOrDefault();
-            var registeredStudentAccounts = course.AssignedStudentAccounts();
+            course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == course.Id).FirstOrDefault();
+            var registeredStudentAccounts = course.StudentAssignments.Select(x => x.Student.Account);
             var canOverride = ev.IsOverrideMode();
 
             var timeFrames = ev.GetTimeFrames();
@@ -50,6 +50,7 @@ namespace NCVC.App.Models
                 {
                     continue;
                 }
+
 
                 var student = context.Students.Where(x => x.Hash == hash && registeredStudentAccounts.Contains(x.Account)).FirstOrDefault();
                 if (student == null)

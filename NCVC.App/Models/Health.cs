@@ -97,8 +97,8 @@ namespace NCVC.App.Models
 
         public static IEnumerable<Student> UnsubmittedStudents(DatabaseContext context, int courseId, DateTime date, TimeFrame timeframe = null)
         {
-            var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
-            var students = course.AssignedStudentAccounts();
+            var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
+            var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             string[] existedStudents;
             if(timeframe != null)
@@ -115,10 +115,10 @@ namespace NCVC.App.Models
         }
         public static IEnumerable<string> UnregisteredAccounts(DatabaseContext context, int courseId)
         {
-            var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
-            var students = context.Students.Select(x => x.Account);
+            var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
+            var students = course.StudentAssignments.Select(x => x.Student.Account);
 
-            return course.AssignedStudentAccounts().Except(students);
+            return course.StudentAssignments.Select(x => x.Student.Account).Except(students);
         }
 
         private static DateTime? parseDateRhs(string dateStr)
@@ -207,8 +207,9 @@ namespace NCVC.App.Models
 
         public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
         {
-            var course = context.Courses.Where(x => x.Id == courseId).FirstOrDefault();
-            var students = course.AssignedStudentAccounts();
+            var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
+            var students = course.StudentAssignments.Select(x => x.Student.Account);
+
             IEnumerable<Health> HealthList = context.HealthList.Include(x => x.Student).Where(x => students.Contains(x.Student.Account)).AsNoTracking(); ;
             var fc = new FilterCompiler(filterString);
 

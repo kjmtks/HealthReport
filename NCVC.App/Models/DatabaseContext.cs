@@ -27,7 +27,8 @@ namespace NCVC.App.Models
         public DbSet<Student> Students { get; set; }
         public DbSet<Course> Courses { get; set; }
         public DbSet<Health> HealthList { get; set; }
-        public DbSet<History> Histories { get; set; } 
+        public DbSet<History> Histories { get; set; }
+        public DbSet<CourseStudentAssignment> CourseStudentAssignments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -50,6 +51,11 @@ namespace NCVC.App.Models
             modelBuilder.Entity<History>().HasKey(x => x.Id);
             modelBuilder.Entity<History>().HasOne(x => x.Operator);
             modelBuilder.Entity<History>().HasOne(x => x.Course);
+
+            modelBuilder.Entity<CourseStudentAssignment>().ToTable("CourseStudentAssignment");
+            modelBuilder.Entity<CourseStudentAssignment>().HasKey(a => new { a.StudentId, a.CourseId });
+            modelBuilder.Entity<CourseStudentAssignment>().HasOne(a => a.Student).WithMany(s => s.CourseAssignments).HasForeignKey(a => a.StudentId);
+            modelBuilder.Entity<CourseStudentAssignment>().HasOne(a => a.Course).WithMany(c => c.StudentAssignments).HasForeignKey(a => a.CourseId);
         }
     }
 }

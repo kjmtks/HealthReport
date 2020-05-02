@@ -17,6 +17,14 @@ namespace NCVC.App.Models
     {
         Decimal = 0, String = 1
     }
+    public class CourseStudentAssignment
+    {
+        public int CourseId { get; set; }
+        public int StudentId { get; set; }
+
+        public virtual Course Course { get; set; }
+        public virtual Student Student { get; set; }
+    }
 
     public class Course
     {
@@ -45,21 +53,74 @@ namespace NCVC.App.Models
         public string InitialFilter { get; set; } = "date==today";
 
         public string SecurityMode { get; set; }
-        public string StudentAccounts { get; set; }
         public string StaffAccounts { get; set; }
 
+
+        [NotMapped]
+        public string StudentAccounts { get; set; }
+        public virtual ICollection<CourseStudentAssignment> StudentAssignments { get; set; } = new List<CourseStudentAssignment>();
+
+
+
         public Course GetEntityForEditOrRemove(DatabaseContext context, IConfiguration config) =>
-            context.Courses.Where(x => x.Id == Id).FirstOrDefault();
+            context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == Id).FirstOrDefault();
         public Course GetEntityAsNoTracking(DatabaseContext context, IConfiguration config) =>
             context.Courses.Where(x => x.Id == Id).AsNoTracking().FirstOrDefault();
 
+
+
+
+
         public void CreateNew(DatabaseContext context, IConfiguration config)
         {
+            var newStudents = (StudentAccounts ?? "").Split(new string[] { " ", "\t", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var s in newStudents)
+            {
+                Student student = context.Students.Where(x => x.Account == s).FirstOrDefault();
+                if (student != null)
+                {
+                    var a = new CourseStudentAssignment()
+                    {
+                        CourseId = Id,
+                        StudentId = student.Id
+                    };
+                    context.Add(a);
+                }
+            }
+
             context.Add(this);
         }
 
         public void Update(DatabaseContext context, IConfiguration config, Course previous)
         {
+            var newStudents = (StudentAccounts ?? "").Split(new string[] { " ", "\t", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var oldStudentd = context.CourseStudentAssignments.Include(x => x.Student).Where(x => x.CourseId == Id).Select(x => x.Student.Account).AsNoTracking().ToArray();
+            var addStudents = newStudents.Except(oldStudentd);
+            var removeStudents = oldStudentd.Except(newStudents);
+
+            foreach (var s in addStudents)
+            {
+                Student student = context.Students.Where(x => x.Account == s).FirstOrDefault();
+                if (student != null)
+                {
+                    var a = new CourseStudentAssignment()
+                    {
+                        CourseId = Id,
+                        StudentId = student.Id
+                    };
+                    context.Add(a);
+                }
+            }
+            foreach (var s in removeStudents)
+            {
+                var a = context.CourseStudentAssignments.Include(x => x.Student).Where(x => x.Student.Account == s).FirstOrDefault();
+                if (a != null)
+                {
+                    StudentAssignments.Remove(a);
+                }
+            }
+
+
             context.Update(this);
         }
 
@@ -69,10 +130,6 @@ namespace NCVC.App.Models
             context.Remove(me);
         }
 
-        public IEnumerable<string> AssignedStudentAccounts()
-        {
-            return StudentAccounts?.Split(new string[] { " ", "\r", "\n", "\t", "," }, StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
-        }
         public IEnumerable<string> AssignedStaffAccounts()
         {
             return StaffAccounts?.Split(new string[] { " ", "\r", "\n", "\t", "," }, StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
@@ -115,6 +172,7 @@ namespace NCVC.App.Models
         public DateTime LastUploadedAt { get; set; }
         public virtual ICollection<Health> HealthList { get; set; } = new List<Health>();
 
+        public virtual ICollection<CourseStudentAssignment> CourseAssignments { get; set; } = new List<CourseStudentAssignment>();
 
         [NotMapped]
         [RegularExpression(@"^KN[0-9]+$")]
