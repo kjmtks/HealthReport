@@ -15,65 +15,67 @@
         @if (Allowed)
         {
 
-            <div class="ui basic segment">
-                <h2 class="ui header">
-                    <div class="content">
-                        @Course.Name
+        <div class="ui basic segment">
+            <h2 class="ui header">
+                <div class="content">
+                    @Course.Name
+                </div>
+            </h2>
+
+            <div class="ui borderless menu top attached">
+                @if (!ShowInfected)
+                {
+                    <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
+
+                }
+                else
+                {
+                    <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
+                }
+
+                <div data-tooltip="結果をCSV形式でダウンロード">
+                    <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
+                </div>
+
+                <div data-tooltip="新着メールの確認">
+                    <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
+                </div>
+
+                <AuthorizeView Roles="Admin" Context="adminContext">
+                    <div data-tooltip="全メールの再確認">
+                        <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
                     </div>
-                </h2>
+                </AuthorizeView>
 
-                <div class="ui borderless menu top attached">
-                    @if (!ShowInfected)
-                    {
-                        <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
+                <div class="small item">
+                    @MailMessage
+                </div>
 
-                    }
-                    else
-                    {
-                        <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
-                    }
-
-                    <div data-tooltip="結果をCSV形式でダウンロード">
-                        <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
-                    </div>
-
-                    <div data-tooltip="新着メールの確認">
-                        <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
-                    </div>
-
-                    <AuthorizeView Roles="Admin" Context="adminContext">
-                        <div data-tooltip="全メールの再確認">
-                            <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
-                        </div>
-                    </AuthorizeView>
-
-                    <div class="small item">
-                        @MailMessage
-                    </div>
-
-                    <div class="right borderless menu">
-                        <div class="item" style="width: 50em">
-                            <div class="ui transparent left icon input">
-                                <i class="terminal icon"></i>
-                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
-                            </div>
+                <div class="right borderless menu">
+                    <div class="item" style="width: 50em">
+                        <div class="ui transparent left icon input">
+                            <i class="terminal icon"></i>
+                            <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
                         </div>
                     </div>
                 </div>
+            </div>
 
 
-                <div class="ui menu attached">
-                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
-                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+            <div class="ui menu attached">
+                <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
+                @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
+                {
+                    var xs = button.Split(":", 2);
+                    if (xs.Count() >= 2)
                     {
-                        var xs = button.Split(":", 2);
-                        if (xs.Count() >= 2)
-                        {
-                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
-                        }
+                        <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
                     }
-                </div>
+                }
+            </div>
 
+            @if (string.IsNullOrWhiteSpace(ErrorMessage))
+            {
                 <Paginated Collection="@HealthList" @ref="@Pagination" CssClass="attached" EntriesPerPage="100">
                     <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
                         <thead>
@@ -300,7 +302,19 @@
                         </tbody>
                     </table>
                 </Paginated>
-            </div>
+            }
+            else
+            {
+                <div class="ui segment bottom attached">
+                    <div class="ui negative message">
+                        <p>フィルタ式の構文エラーです:</p>
+                        <div class="ui message">
+                            <pre>@ErrorMessage</pre>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
 
             @if (EV.IsShowUnsubmittedUsers())
             {
@@ -397,6 +411,7 @@
     protected bool Loaded = false;
     protected bool Allowed = false;
 
+    protected string ErrorMessage;
     protected string MailMessage;
     protected GetMailsComponent GetMailsComponent1;
     protected GetMailsComponent GetMailsComponent2;
@@ -612,7 +627,16 @@
 
     protected void Filter(string filterString)
     {
-        HealthList = Health.Search(DB.Context, EV, Course.Id, filterString);
+        var ec = NCVC.Parser.QueryParser.HasError(filterString);
+        if(ec?.Value != null)
+        {
+            ErrorMessage = ec.Value;
+        }
+        else
+        {
+            ErrorMessage = "";
+            HealthList = Health.Search(DB.Context, EV, Course.Id, filterString);
+        }
     }
 
 }

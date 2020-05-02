@@ -261,10 +261,13 @@ module QueryParser =
 
     let ParseQuery queryString = 
         match run pquery queryString with
-        | Success (query, _, _) -> Some(query)
-        | Failure (errmsg, _, _) ->
-            printfn "%s" errmsg
-            None
+        | Success (result, _, _) -> Some(result)
+        | Failure (_, _, _) -> None
+        
+    let HasError queryString = 
+        match run pquery queryString with
+        | Success (_, _, _) ->  None
+        | Failure (errmsg, _, _) -> Some(errmsg)
 
 
     let GetReferences (expr : BooleanExpr) : Reference list =
