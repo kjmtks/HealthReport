@@ -145,11 +145,15 @@
                         <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
                     </div>
                     <div class="field">
+                        <label>初期フィルタ</label>
+                        <InputText @bind-Value="@EdittingModel.InitialFilter" />
+                        <ValidationMessage For="@(() => EdittingModel.InitialFilter)" />
+                    </div>
+                    <div class="field">
                         <label>フィルタボタン</label>
                         <InputTextArea @bind-Value="@EdittingModel.FilterButtons" />
                         <ValidationMessage For="@(() => EdittingModel.FilterButtons)" />
                     </div>
-
                     <div class="content">
                         <div class="actions">
                             <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>

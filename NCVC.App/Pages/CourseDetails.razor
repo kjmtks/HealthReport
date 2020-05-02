@@ -14,15 +14,15 @@
     <Authorized>
         @if (Allowed)
         {
-            <h2 class="ui header">
-                <i class="list icon"></i>
-                <div class="content">
-                    @Course.Name
-                </div>
-            </h2>
 
             <div class="ui basic segment">
-                <div class="ui menu top attached">
+                <h2 class="ui header">
+                    <div class="content">
+                        @Course.Name
+                    </div>
+                </h2>
+
+                <div class="ui borderless menu top attached">
                     @if (!ShowInfected)
                     {
                         <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
@@ -51,7 +51,7 @@
                         @MailMessage
                     </div>
 
-                    <div class="right menu">
+                    <div class="right borderless menu">
                         <div class="item" style="width: 50em">
                             <div class="ui transparent left icon input">
                                 <i class="terminal icon"></i>
@@ -435,11 +435,8 @@
                 Allowed = true;
 
                 var today = DateTime.Today;
-                var condition = $"date==today";
-                var order = "user";
-                SetConditionAndOrder(condition, order);
+                SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
                 HealthList = Health.Search(DB.Context, EV, id, FilterString);
-                //HealthList = DB.Context.HealthList.Include(x => x.Student).Where(x => x.CourseId == id).OrderBy(x => x.MeasuredAt);
             }
         }
 

@@ -42,6 +42,8 @@ namespace NCVC.App.Models
 
         public string FilterButtons { get; set; }
 
+        public string InitialFilter { get; set; } = "date==today";
+
         public string SecurityMode { get; set; }
         public string StudentAccounts { get; set; }
         public string StaffAccounts { get; set; }
