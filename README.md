@@ -205,16 +205,25 @@ Google Forms などを使用して収集したデータを一括登録するこ�
 | `LDAP_SEARCH_USER_ACCOUNT` | `user1` | ユーザー検索を行うアカウント |
 | `LDAP_SEARCH_USER_PASSWORD` | `user1-password` | 上記アカウントのパスワード |
 
-## フィルタボタン
+## フィルタ
+
+### 初期フィルタ
+
+コース毎に絞り込み条件の初期値を設定することができます．
+コースの作成・編集画面で，「初期フィルタ」欄にフィルタ式を記述します．
+
+### フィルタボタン
 
 コース毎に絞り込み検索を簡便に行うためのボタンを任意に設定することができます．
 コースの作成・編集画面で，「フィルタボタン」欄に以下の形式で1行につきひとつを記述します．
 
 ```
-ボタンのラベル: 検索の式
+ボタンのラベル: フィルタ式
 ```
 
-「検索の式」には検索条件を表す論理式を記述します．
+### フィルタ式の構文
+
+「フィルタ式」には検索条件を表す論理式を記述します．
 
 * 観察対象番号: `user=="観察対象者番号"`, `user!="観察対象者番号"`
   * 指定した観察対象者番号で先頭一致するか否か
@@ -244,23 +253,23 @@ Google Forms などを使用して収集したデータを一括登録するこ�
 構文の詳細は以下の通りです:
 
 ```
-StringAtom ::= "user" | "timeframe" | "tag" | <string>
-StringExpr ::= <StringAtom>
+StringExpr ::= <string>
+             | "user" | "timeframe" | "tag"
 
-DecimalAtom ::= "temp" | <decimal>
-DecimalExpr ::= <DecimalAtom>
+DecimalExpr ::= <decimal>
+              | "temp"
               | "-" <DecimalExpr>
               | <DecimalExpr> ("+" | "-" | "*" | "\") <DecimalExpr>
 
-DateAtom ::= "date" | <date> | "today" | "thisweek" | "thismonth"
-DateExpr ::= <DateAtom>
+DateExpr ::= <date>
+           | "date" | "today" | "thisweek" | "thismonth"
            | <DateExpr> ("+" | "-") <DecimalExpr> | <DecimalExpr> ("+" | "-") <DateExpr>
 
-BooleanAtom ::= "true" | "false" | "error" | "warning" | "submitted" | "infected"
+BooleanExpr ::= "true" | "false"
+              | "error" | "warning" | "submitted" | "infected"
               | <StringExpr> ("==" | "!=") <StringExpr>
               | <DecimalExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DecimalExpr>
               | <DateExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DateExpr>
-BooleanExpr ::= <BooleanAtom>
               | <BooleanExpr> ("==" | "!=") <BooleanExpr>
               | "!" <BooleanExpr>
               | <BooleanExpr> ("&&" | "||" | "->") <BooleanExpr>
