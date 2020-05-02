@@ -422,6 +422,9 @@
         Notifier.Notify += OnNotify;
         await Update();
 
+        SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
+        HealthList = Health.Search(DB.Context, EV, id, FilterString);
+
     }
 
     public async Task OnNotify()
@@ -449,9 +452,8 @@
             {
                 Allowed = true;
 
-                var today = DateTime.Today;
-                SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
-                HealthList = Health.Search(DB.Context, EV, id, FilterString);
+                // SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
+                // HealthList = Health.Search(DB.Context, EV, id, FilterString);
             }
         }
 
