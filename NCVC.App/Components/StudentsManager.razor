@@ -56,7 +56,7 @@
                             @student.Hash
                         </td>
                         <td>
-                            @foreach(var tag in student.Tags?.Split(" ") ?? new string[]{})
+                            @foreach(var tag in student.Tags?.Split(" ", StringSplitOptions.RemoveEmptyEntries) ?? new string[]{})
                             {
                             <div class="ui mini label">@tag</div>
                             }
