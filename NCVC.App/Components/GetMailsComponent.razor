@@ -9,14 +9,37 @@
 @inject EnvironmentVariableService EV;
 
 
-<div class="ui basic segment">
-    <button class="ui @(IsAll ? "red" : "primary") @(Processing ? "loading" : "") button" @onclick="UpdateAsync">
-        @(IsAll ? "Check all mail" : "Check new mail")
-    </button>
-    @Message
-</div>
+
+<a class="@CssClass" @onclick="UpdateAsync">
+    @if (Processing)
+    {
+        <i class="icons">
+            <i class="notched circle loading icon"></i>
+        </i>
+    }
+    else
+    {
+        @if (IsAll)
+        {
+            <i class="icons">
+                <i class="sync alternate icon"></i>
+                <i class="inverted corner add icon"></i>
+            </i>
+        }
+        else
+        {
+            <i class="icons">
+                <i class="sync alternate icon"></i>
+            </i>
+        }
+    }
+</a>
+
 
 @code{
+    [Parameter]
+    public string CssClass { get; set; }
+
     [Parameter]
     public bool IsAll { get; set; }
 
@@ -24,20 +47,12 @@
     public Course Course { get; set; }
 
     protected bool Processing { get; set; }
-    protected string Message { get; set; }
+
+    public string MailMessage { get; set; }
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
-        if (lastHistroy == null)
-        {
-            Message = "no histroy";
-        }
-        else
-        {
-            Message = $"最後のチェックは {lastHistroy.OperatedAt.ToString()} に {lastHistroy.Operator?.Name ?? "システム"} によって行われました．";
-        }
     }
 
     protected async Task UpdateAsync()
@@ -45,7 +60,6 @@
         if (!Processing)
         {
             Processing = true;
-            Message = "確認中...";
             await InvokeAsync(() => { StateHasChanged(); });
             await Task.Run(async () =>
             {
@@ -53,7 +67,6 @@
                 var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
                 if (staff == null)
                 {
-                    Message = "許可されないユーザーです．";
                     return;
                 }
 
@@ -76,18 +89,18 @@
                             (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, lastHistroy.LastIndex);
                         }
                     }
-                    if (count > 0)
+                    if(count == 0)
                     {
-                        Message = $"データを更新しました．";
+                        MailMessage = "新着メールはありません．";
                     }
                     else
                     {
-                        Message = $"新着情報はありません．";
+                        MailMessage = "データベースを更新しました．";
                     }
                 }
                 catch (Exception e)
                 {
-                    Message = $"{e.Message}: {e.StackTrace}";
+                    MailMessage = e.Message;
                 }
             });
             Processing = false;

@@ -21,10 +21,6 @@
                 </div>
             </h2>
 
-            <div>
-                <GetMailsComponent IsAll="false" Course="Course" />
-            </div>
-
             <div class="ui basic segment">
                 <div class="ui menu top attached">
                     @if (!ShowInfected)
@@ -36,18 +32,36 @@
                     {
                         <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
                     }
+
+                    <div data-tooltip="結果をCSV形式でダウンロード">
+                        <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
+                    </div>
+
+                    <div data-tooltip="新着メールの確認">
+                        <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
+                    </div>
+
+                    <AuthorizeView Roles="Admin" Context="adminContext">
+                        <div data-tooltip="全メールの再確認">
+                            <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
+                        </div>
+                    </AuthorizeView>
+
+                    <div class="small item">
+                        @MailMessage
+                    </div>
+
                     <div class="right menu">
                         <div class="item" style="width: 50em">
-                            <div class="ui transparent icon input">
-                                <i class="filter link icon" @onclick="()=> { Filter(FilterString); }"></i>
+                            <div class="ui transparent left icon input">
+                                <i class="terminal icon"></i>
                                 <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
                             </div>
                         </div>
-                        <div data-tooltip="結果をダウンロード"><a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a></div>
                     </div>
                 </div>
 
-                
+
                 <div class="ui menu attached">
                     <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
                     @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
@@ -288,54 +302,77 @@
                 </Paginated>
             </div>
 
-            <AuthorizeView Roles="Admin" Context="adminContext">
-                <GetMailsComponent IsAll="true" Course="Course" />
-            </AuthorizeView>
-
-
-            <div class="ui basic segment">
-                <div class="ui menu top attached">
-                    @if (EV.IsShowUnsubmittedUsers())
-                    {
-                        <span class="item">未登録の観察対象者</span>
-                    }
-                    else
-                    {
-                        <span class="item">未提出の観察対象者 (@(ussDate.ToShortDateString()))</span>
-                        <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
-                        <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
-                        <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
-                    }
-                </div>
-                <table class="ui very compact table bottom attached">
-                    <thead>
-                        <tr>
-                            <th colspan="2" class="single line">
-                                観察対象者
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!EV.IsShowUnsubmittedUsers())
-                        {
-                            @foreach (var s in Health.UnsubmittedStudents(DB.Context, id, ussDate))
-                            {
+            @if (EV.IsShowUnsubmittedUsers())
+            {
+                var xs = Health.UnregisteredAccounts(DB.Context, id);
+                if (xs.Count() > 0)
+                {
+                    <div class="ui basic segment">
+                        <div class="ui menu top attached">
+                            <span class="item">未登録の観察対象者</span>
+                        </div>
+                        <table class="ui very compact table bottom attached">
+                            <thead>
                                 <tr>
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
-                                    <td>@s.Name</td>
+                                    <th colspan="2" class="single line">
+                                        観察対象者
+                                    </th>
                                 </tr>
-                            }
-                        }
-                        @foreach (var a in Health.UnregisteredAccounts(DB.Context, id))
-                        {
-                            <tr>
-                                <td>@a</td>
-                                <td>未登録</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in xs)
+                                {
+                                    <tr>
+                                        <td>@a</td>
+                                        <td>未登録</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
+            else
+            {
+                var xs = Health.UnregisteredAccounts(DB.Context, id);
+                var ys = Health.UnsubmittedStudents(DB.Context, id, ussDate);
+                if (xs.Count() > 0 || ys.Count() > 0)
+                {
+                    <div class="ui basic segment">
+                        <div class="ui menu top attached">
+                            <span class="item">未提出・未登録の観察対象者 (@(ussDate.ToShortDateString()))</span>
+                            <a class="item" @onclick='() => { ussDate = DateTime.Today; }'>今日</a>
+                            <a class="item" @onclick='() => { ussDate = ussDate.AddDays(-1); }'>現在表示日時の前日</a>
+                            <a class="item" @onclick='() => { ussDate = ussDate.AddDays(1); }'>現在表示日時の翌日</a>
+                        </div>
+                        <table class="ui very compact table bottom attached">
+                            <thead>
+                                <tr>
+                                    <th colspan="2" class="single line">
+                                        観察対象者
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in ys)
+                                {
+                                    <tr>
+                                        <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
+                                        <td>@s.Name</td>
+                                    </tr>
+                                }
+                                @foreach (var a in xs)
+                                {
+                                    <tr>
+                                        <td>@a</td>
+                                        <td>未登録</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            }
         }
     </Authorized>
 </AuthorizeView>
@@ -359,6 +396,11 @@
     protected string FilterString = "";
     protected bool Loaded = false;
     protected bool Allowed = false;
+
+    protected string MailMessage;
+    protected GetMailsComponent GetMailsComponent1;
+    protected GetMailsComponent GetMailsComponent2;
+
     protected override async Task OnInitializedAsync()
     {
         Loaded = false;
@@ -398,6 +440,27 @@
                 SetConditionAndOrder(condition, order);
                 HealthList = Health.Search(DB.Context, EV, id, FilterString);
                 //HealthList = DB.Context.HealthList.Include(x => x.Student).Where(x => x.CourseId == id).OrderBy(x => x.MeasuredAt);
+            }
+        }
+
+        if(!string.IsNullOrWhiteSpace(GetMailsComponent1?.MailMessage))
+        {
+            MailMessage = GetMailsComponent1.MailMessage;
+        }
+        else if(!string.IsNullOrWhiteSpace(GetMailsComponent2?.MailMessage))
+        {
+            MailMessage = GetMailsComponent2.MailMessage;
+        }
+        else
+        {
+            var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == id).OrderBy(x => x.OperatedAt).LastOrDefault();
+            if (lastHistroy == null)
+            {
+                MailMessage = "メールの確認をしていません．";
+            }
+            else
+            {
+                MailMessage = $"最後のメール確認は {lastHistroy.OperatedAt.ToString()} に {lastHistroy.Operator?.Name ?? "システム"} によって行われました．";
             }
         }
     }
