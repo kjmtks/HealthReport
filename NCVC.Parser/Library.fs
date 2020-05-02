@@ -128,7 +128,7 @@ module QueryParser =
     let pdecimalOp2 =
         choice
             [ pchar '*' .>> spaces >>% (fun x y -> Mul(x, y) )
-              pchar '\\' .>> spaces >>% (fun x y -> Div(x, y) ) ]
+              pchar '\\' .>> spaces >>% (fun x y -> Div(y, x) ) ]
         
     let pdecimalExpr, pdecimalExprImpl = createParserForwardedToRef ()
     let pdecimalFactor : Parser<DecimalExpr, UserState> =
