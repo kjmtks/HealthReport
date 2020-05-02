@@ -1,8 +1,9 @@
 #!/bin/sh
 
-N=10000
+N0=200
+N=500
 Year=2020
-for Month in 1 2 3 4
+for Month in 4
 do
 
   Day=1 
@@ -16,9 +17,9 @@ do
   puts LABEL
 
   while date.month == $Month
-    for i in (1..$N)
+    for i in ($N0..$N)
       id = sprintf("#{PREFIX}%d", i)
-      name = "dummy-user-#{i}"
+      name = sprintf("dummyuser%05d", i)
       measured_date = sprintf("%04d/%02d/%02d", date.year, date.month, date.day)
       d = sprintf("%4.1f", 36 + rand()*2)
       cs = (1..8).map{|c| rand() < 0.99 ? "無" : "有" }.join(",")
