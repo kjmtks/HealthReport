@@ -16,6 +16,15 @@
         {
 
             <div class="ui basic segment">
+               
+                <div class="ui top aligned @(Processing ? "active" : "disabled") inverted dimmer">
+                    <div class="content">
+                        <h2 class="ui inverted icon header">
+                            <i class="spinner loading icon"></i>
+                        </h2>
+                    </div>
+                </div>
+
                 <h2 class="ui header">
                     <div class="content">
                         @Course.Name
@@ -55,7 +64,7 @@
                         <div class="item" style="width: 50em">
                             <div class="ui transparent left icon input">
                                 <i class="terminal icon"></i>
-                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
+                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='async (e) => { if (e.Key == "Enter") { await FilterAsync(FilterString); } }'>
                             </div>
                         </div>
                     </div>
@@ -63,13 +72,13 @@
 
 
                 <div class="ui menu attached">
-                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
+                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='async () => { FilterString = ""; await FilterAsync(""); }'>リセット</a></div>
                     @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                     {
                         var xs = button.Split(":", 2);
                         if (xs.Count() >= 2)
                         {
-                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
+                            <a class="item" @onclick='async () => { await SetFilteringAsync(xs[1]); }'>@xs[0]</a>
                         }
                     }
                 </div>
@@ -80,22 +89,22 @@
                         <thead>
                             <tr>
                                 <th class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOrderDescDate"><i class="angle up icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDescDateAsync"><i class="angle up icon"></i></a>
                                     日付
-                                    <a href="javascript:void(0);" @onclick="SetOrderDate"><i class="angle down icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDateAsync"><i class="angle down icon"></i></a>
                                 </th>
                                 @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                 {
                                     <th class="single line">
-                                        <a href="javascript:void(0);" @onclick="SetOrderDescTimeFrame"><i class="angle up icon"></i></a>
+                                        <a href="javascript:void(0);" @onclick="SetOrderDescTimeFrameAsync"><i class="angle up icon"></i></a>
                                         時間帯
-                                        <a href="javascript:void(0);" @onclick="SetOrderTimeFrame"><i class="angle down icon"></i></a>
+                                        <a href="javascript:void(0);" @onclick="SetOrderTimeFrameAsync"><i class="angle down icon"></i></a>
                                     </th>
                                 }
                                 <th colspan="2" class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOrderDescStudent"><i class="angle up icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderDescStudentAsync"><i class="angle up icon"></i></a>
                                     観察対象者
-                                    <a href="javascript:void(0);" @onclick="SetOrderStudent"><i class="angle down icon"></i></a>
+                                    <a href="javascript:void(0);" @onclick="SetOrderStudentAsync"><i class="angle down icon"></i></a>
                                 </th>
                                 @if (!ShowInfected)
                                 {
@@ -158,12 +167,12 @@
                                     }
                                 }
                                 <tr class="@style">
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetDate(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetDateAsync(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
                                     @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                     {
-                                        <td><a href="javascript:void(0);" @onclick="() => { SetTimeFrame(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
                                     }
-                                    <td><a href="javascript:void(0);" @onclick="() => { SetStudent(health.Student); }">@health.Student.Account</a></td>
+                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
                                     <td>@health.Student.Name</td>
 
                                     @if (health.IsEmptyData)
@@ -316,7 +325,7 @@
                                 }
                                 else
                                 {
-                                    <a class="item" @onclick="() => GotoPage(i)">@i</a>
+                                    <a class="item" @onclick="async () => await  GotoPageAsync(i)">@i</a>
                                 }
                                 previous = i;
                             }
@@ -334,6 +343,7 @@
                         </div>
                     </div>
                 }
+
             </div>
 
             @if (EV.IsShowUnsubmittedUsers())
@@ -391,7 +401,7 @@
                                 @foreach (var s in ys)
                                 {
                                     <tr>
-                                        <td><a href="javascript:void(0);" @onclick="() => { SetStudent(s); }">@s.Account</a></td>
+                                        <td><a href="javascript:void(0);" @onclick="() => { SetStudentAsync(s); }">@s.Account</a></td>
                                         <td>@s.Name</td>
                                     </tr>
                                 }
@@ -434,6 +444,7 @@
     protected string FilterString = "";
     protected bool Loaded = false;
     protected bool Allowed = false;
+    protected bool Processing = false;
 
     protected string ErrorMessage;
     protected string MailMessage;
@@ -446,6 +457,7 @@
         Notifier.Notify += OnNotify;
         await Update();
         SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
+        await FilterAsync(FilterString);
     }
 
     public async Task OnNotify()
@@ -457,22 +469,26 @@
     {
         Notifier.Notify -= OnNotify;
     }
-    public void UpdatePagination()
+    public async Task UpdatePaginationAsync()
     {
         var cnt = HealthQuery.Count();
         var total = cnt / EntriesPerPage + (cnt % EntriesPerPage > 0 ? 1 : 0);
         var head = Enumerable.Range(1, 3);
         var around = Enumerable.Range(PageNumber - 3, 7);
         var tail = Enumerable.Range(total - 2, 3);
-        HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage).AsEnumerable();
         pages = head.Concat(around).Concat(tail).OrderBy(x => x).Where(x => x > 0 && x <= total).Distinct();
     }
 
-    protected void GotoPage(int i)
+    protected async Task GotoPageAsync(int i)
     {
+        Processing = true;
+        await InvokeAsync(() => StateHasChanged());
         PageNumber = i;
         HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
-        UpdatePagination();
+        await UpdatePaginationAsync();
+        Processing = false;
+        await InvokeAsync(() => StateHasChanged());
     }
 
     protected async Task Update()
@@ -484,7 +500,7 @@
         if (staff != null)
         {
             var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-            Course = DB.Context.Courses.AsNoTracking().ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name))).FirstOrDefault();
+            Course = DB.Context.Courses.Include(x => x.StudentAssignments).Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name))).FirstOrDefault();
             if (Course != null)
             {
                 Allowed = true;
@@ -580,89 +596,91 @@
         return string.Join(",", cs);
     }
 
-    protected void SetOrderStudent()
+    protected async Task SetOrderStudentAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("user")).Prepend("user");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
-    protected void SetOrderDescStudent()
+    protected async Task SetOrderDescStudentAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("user")).Prepend("~user");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
 
-    protected void SetOrderTimeFrame()
+    protected async Task SetOrderTimeFrameAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("timeframe")).Prepend("timeframe");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
-    protected void SetOrderDescTimeFrame()
+    protected async Task SetOrderDescTimeFrameAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("timeframe")).Prepend("~timeframe");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
 
-    protected void SetOrderDate()
+    protected async Task SetOrderDateAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("date")).Prepend("date");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
-    protected void SetOrderDescDate()
+    protected async Task SetOrderDescDateAsync()
     {
         var (condition, order) = GetConditionAndOrder();
         var orders = order.Split(",", StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).Where(x => !string.IsNullOrWhiteSpace(x)).Where(x => !x.Contains("date")).Prepend("~date");
         order = string.Join(", ", orders);
         SetConditionAndOrder(condition, order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
 
 
-    protected void SetFiltering(string expr)
+    protected async Task SetFilteringAsync(string expr)
     {
         var (_, order) = GetConditionAndOrder();
         SetConditionAndOrder(AddCondition(expr), order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
 
-    protected void SetStudent(Student student)
+    protected async Task SetStudentAsync(Student student)
     {
         var (_, order) = GetConditionAndOrder();
         var expr = $"user == \"{student?.Account}\"";
         SetConditionAndOrder(AddCondition(expr), order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
-    protected void SetTimeFrame(string timeFrame)
+    protected async Task SetTimeFrameAsync(string timeFrame)
     {
         var (_, order) = GetConditionAndOrder();
         var expr = $"timeframe == \"{timeFrame}\"";
         SetConditionAndOrder(AddCondition(expr), order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
-    protected void SetDate(DateTime date)
+    protected async Task SetDateAsync(DateTime date)
     {
         var (_, order) = GetConditionAndOrder();
         var expr = $"date =={ date.Year}/{date.Month}/{date.Day}";
         SetConditionAndOrder(AddCondition(expr), order);
-        Filter(FilterString);
+        await FilterAsync(FilterString);
     }
 
-    protected void Filter(string filterString)
+    protected async Task FilterAsync(string filterString)
     {
+        Processing = true;
+        await InvokeAsync(() => StateHasChanged());
         var ec = NCVC.Parser.QueryParser.HasError(filterString);
         if(ec?.Value != null)
         {
@@ -673,8 +691,10 @@
             ErrorMessage = "";
             HealthQuery = Health.Search(DB.Context, EV, Course.Id, filterString);
             HealthList = HealthQuery;
-            UpdatePagination();
+            await UpdatePaginationAsync();
         }
+        Processing = false;
+        await InvokeAsync(() => StateHasChanged());
     }
 
 }

@@ -210,7 +210,7 @@ namespace NCVC.App.Models
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             var fc = new FilterCompiler(filterString);
-            var result = fc.Filtering(context);
+            var result = fc.Filtering(context, ev.GetNumOfDaysToSearch());
 
             return result;
         }

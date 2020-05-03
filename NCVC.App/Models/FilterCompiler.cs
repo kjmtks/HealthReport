@@ -38,7 +38,7 @@ namespace NCVC.App.Models
             return rs;
         }
 
-        public IQueryable<Health> Filtering(DatabaseContext context)
+        public IQueryable<Health> Filtering(DatabaseContext context, int? numOfDaysToSearch = null)
         {
             if (query == null)
             {
@@ -87,7 +87,13 @@ namespace NCVC.App.Models
     h.""UploadedAt"" AS ""UploadedAt""
 FROM ""Health"" AS h INNER JOIN ""Student"" AS s ON h.""StudentId"" = s.""Id""");
 
-            var where = string.Join(" AND ", query.Value.Item1.Select(x => toSqlBooleanExpr(x)));
+            var conditions = query.Value.Item1.Select(x => toSqlBooleanExpr(x)).ToList();
+            if (numOfDaysToSearch.HasValue)
+            {
+                var today = string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+                conditions.Add(@$"h.""MeasuredAt"" >= {today} - (interval '{numOfDaysToSearch.Value} day')");
+            }
+            var where = string.Join(" AND ", conditions);
             if(!string.IsNullOrWhiteSpace(where))
             {
                 sql.Append(" WHERE ");

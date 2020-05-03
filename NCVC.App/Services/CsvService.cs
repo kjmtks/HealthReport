@@ -53,6 +53,8 @@ namespace NCVC.App.Services
                 string normal_subject = EnvironmentVariable.GetMailSubject();
                 string infected_subject = EnvironmentVariable.GetMailInfectedSubject();
 
+                DateTime? minDate = null, maxDate = null;
+
                 foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(normal_subject) || x.Envelope.Subject.Contains(infected_subject)))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
@@ -69,21 +71,32 @@ namespace NCVC.App.Services
                                     r.ReadLine(); // skip header row
                                     while (!r.EndOfStream)
                                     {
+                                        var flg = false;
                                         var line = r.ReadLine().Trim();
-                                        var row = line.Split(",").Select(x => x.Trim(new char[] { '"', ' ' }));
+                                        var row = line.Split(",").Select(x => x.Trim(new char[] { '"', ' ' })).ToArray();
+                                        if (!DateTime.TryParseExact(row[2], new string[] { "yyyy/MM/dd", "yyyy/M/dd", "yyyy/MM/d", "yyyy/M/d" },
+                                                System.Globalization.CultureInfo.InvariantCulture,
+                                                System.Globalization.DateTimeStyles.None, out var date))
+                                        {
+                                            continue;
+                                        }
+                                        if (minDate == null || minDate > date) minDate = date;
+                                        if (maxDate == null || maxDate < date) maxDate = date;
 
                                         if (msg.Envelope.Subject.Contains(normal_subject) && row.Count() >= 16)
                                         {
-                                            addHealthDateResults.Add(addHealthData(course, row.ToArray(), received_at, msg.Index, false));
+                                            addHealthDateResults.Add(addHealthData(course, row, date, received_at, msg.Index, false));
+                                            flg = true;
                                             num++;
                                         }
                                         if (msg.Envelope.Subject.Contains(infected_subject) && row.Count() >= 19)
                                         {
-                                            addHealthDateResults.Add(addHealthData(course, row.ToArray(), received_at, msg.Index, true));
+                                            addHealthDateResults.Add(addHealthData(course, row, date, received_at, msg.Index, true));
+                                            flg = true;
                                             num++;
                                         }
 
-                                        if(num % 1000 == 0)
+                                        if (flg && num % 1000 == 0)
                                         {
                                             Context.SaveChanges();
                                             Console.WriteLine($"Reading health data from #'{msg.Index}': {num}");
@@ -97,6 +110,48 @@ namespace NCVC.App.Services
                     }
                 }
                 client.Disconnect(true);
+
+                if (EnvironmentVariable.IsShowUnsubmittedUsers() && minDate.HasValue && maxDate.HasValue)
+                {
+                    var num = 0;
+                    //var studentIds = Context.CourseStudentAssignments.Where(x => x.CourseId == course.Id).Select(x => x.StudentId).AsEnumerable();
+                    var studentIds = course.StudentAssignments.Select(x => x.StudentId);
+                    var tfs = EnvironmentVariable.GetTimeFrames() ?? new TimeFrame[] { null };
+                    var d = minDate.Value;
+                    var today = DateTime.Today;
+                    while (d <= maxDate.Value && d <= today)
+                    {
+                        foreach (var tf in tfs)
+                        {
+                            var timeframe = tf?.Name ?? "";
+                            foreach (var sid in studentIds)
+                            {
+                                var h = Context.HealthList.Where(x => x.StudentId == sid && x.MeasuredAt == d && x.TimeFrame == timeframe).FirstOrDefault();
+                                if(h == null)
+                                {
+                                    Context.Add(new Health()
+                                    {
+                                        IsEmptyData = true,
+                                        MeasuredAt = d,
+                                        TimeFrame = timeframe,
+                                        StudentId = sid
+                                    });
+                                    num++;
+                                    if (num % 1000 == 0)
+                                    {
+                                        Context.SaveChanges();
+                                        Console.WriteLine($"reigstering dummy health data: {num}");
+                                    }
+                                }
+                            }
+                        }
+                        
+                        d = d.AddDays(1);
+                    }
+
+                    Context.SaveChanges();
+                    Console.WriteLine($"Finishing reigstering dummy health data: {num}");
+                }
             }
 
 
@@ -118,20 +173,13 @@ namespace NCVC.App.Services
         }
 
         public enum AddHealthDateResult { AddNewData, UpdateData, Nop }
-        private AddHealthDateResult addHealthData(Course course, string[] row, DateTime received_at, int msg_index, bool isInfected)
+        private AddHealthDateResult addHealthData(Course course, string[] row, DateTime measuredDate, DateTime received_at, int msg_index, bool isInfected)
         {
             var canOverride = EnvironmentVariable.IsOverrideMode();
             var timeFrames = EnvironmentVariable.GetTimeFrames();
 
             var hash = row[0];
             var name = row[1];
-
-            if (!DateTime.TryParseExact(row[2], new string[] { "yyyy/MM/dd", "yyyy/M/dd", "yyyy/MM/d", "yyyy/M/d" },
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    System.Globalization.DateTimeStyles.None, out var date))
-            {
-                return AddHealthDateResult.Nop;
-            }
 
             var student = Context.CourseStudentAssignments.Include(x => x.Student).Include(x => x.Course)
                 .Where(x => x.CourseId == course.Id).Select(x => x.Student).Where(x => x.Hash == hash).FirstOrDefault();
@@ -141,7 +189,7 @@ namespace NCVC.App.Services
             }
 
             string timeFrameName;
-            if (received_at.Year == date.Year && received_at.Month == date.Month && received_at.Day == date.Day)
+            if (received_at.Year == measuredDate.Year && received_at.Month == measuredDate.Month && received_at.Day == measuredDate.Day)
             {
                 timeFrameName = timeFrames?.Where(frame => frame.IsIn(received_at))?.FirstOrDefault()?.Name ?? "";
             }
@@ -150,7 +198,7 @@ namespace NCVC.App.Services
                 timeFrameName = timeFrames?.LastOrDefault()?.Name ?? "";
             }
 
-            var health = Context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == date && (isInfected || x.TimeFrame == timeFrameName)).FirstOrDefault();
+            var health = Context.HealthList.Where(x => x.StudentId == student.Id && x.MeasuredAt == measuredDate && (isInfected || x.TimeFrame == timeFrameName)).FirstOrDefault();
             var existed = health != null;
             if (!existed)
             {
@@ -158,18 +206,18 @@ namespace NCVC.App.Services
                 {
                     RawUserId = hash,
                     RawUserName = name,
-                    MeasuredAt = date,
+                    MeasuredAt = measuredDate,
                     UploadedAt = received_at,
                     Student = student,
                     MailIndex = msg_index,
                     IsInfected = isInfected
                 };
             }
-            else if (canOverride)
+            else if (canOverride || health.IsEmptyData)
             {
                 health.RawUserId = hash;
                 health.RawUserName = name;
-                health.MeasuredAt = date;
+                health.MeasuredAt = measuredDate;
                 health.UploadedAt = received_at;
                 health.Student = student;
                 health.MailIndex = msg_index;
