@@ -80,8 +80,6 @@ module QueryParser =
         | TimeFrame
         | MeasuredDate
         | BodyTemperature
-        | HasError
-        | HasWarning
         | IsSubmitted
         | IsInfected
     type SortingOrder =
@@ -227,8 +225,6 @@ module QueryParser =
 
     let pattribute : Parser<SortingAttribute, UserState> =
         attempt (stringReturn "temp" SortingAttribute.BodyTemperature)
-        <|> attempt (stringReturn "error" SortingAttribute.HasError)
-        <|> attempt (stringReturn "warning" SortingAttribute.HasWarning)
         <|> attempt (stringReturn "infected" SortingAttribute.IsInfected)
         <|> attempt (stringReturn "submitted" SortingAttribute.IsSubmitted)
         <|> attempt (stringReturn "date" SortingAttribute.MeasuredDate)

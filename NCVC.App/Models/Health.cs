@@ -61,7 +61,6 @@ namespace NCVC.App.Models
         public int StudentId { get; set; }
         public virtual Student Student { get; set; }
 
-        [NotMapped]
         public bool IsEmptyData { get; set; } = false;
 
 
@@ -205,52 +204,15 @@ namespace NCVC.App.Models
             }
         }
 
-        public static IEnumerable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString)
+        public static IQueryable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString, int? page = null, int? numPerPage = null)
         {
             var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
-            IEnumerable<Health> HealthList = context.HealthList.Include(x => x.Student).Where(x => students.Contains(x.Student.Account)).AsNoTracking(); ;
             var fc = new FilterCompiler(filterString);
+            var result = fc.Filtering(context);
 
-            if (ev.IsShowUnsubmittedUsers())
-            {
-                var emptyHealthList = new List<Health>();
-                var tfs = ev.GetTimeFrames() ?? new TimeFrame[] { null };
-                var dates = HealthList.Select(x => x.MeasuredAt);
-                var includeToday = fc.IncludeToday();
-                if (includeToday || dates.Count() > 0)
-                {
-                    var dt = dates.Count() == 0 ? DateTime.Today : dates.Min();
-                    var dmax = includeToday ? DateTime.Today : dates.Max();
-                    while (dt <= dmax)
-                    {
-                        var infected_user_ids = context.HealthList.Include(x => x.Student).Where(x => x.MeasuredAt == dt && x.IsInfected).Select(x => x.Student.Id).ToList();
-
-                        foreach (var tf in tfs)
-                        {
-                            foreach (var s in UnsubmittedStudents(context, courseId, dt, tf).Where(x => !infected_user_ids.Contains(x.Id)))
-                            {
-                                var h = new Health()
-                                {
-                                    IsEmptyData = true,
-                                    MeasuredAt = dt,
-                                    TimeFrame = tf?.Name ?? "",
-                                    Student = s
-                                };
-                                emptyHealthList.Add(h);
-                            }
-                        }
-                        dt = dt.AddDays(1);
-                    }
-                }
-                HealthList = HealthList.Concat(emptyHealthList);
-            }
-
-            HealthList = fc.Filtering(HealthList);
-            HealthList = HealthList.OrderBy(x => x.MeasuredAt).ThenBy(xs => xs.TimeFrame).ThenBy(x => x.Student.Account);
-            HealthList = fc.Sort(HealthList);            
-            return HealthList;
+            return result;
         }
     }
 }

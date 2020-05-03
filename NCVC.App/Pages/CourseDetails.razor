@@ -15,69 +15,68 @@
         @if (Allowed)
         {
 
-        <div class="ui basic segment">
-            <h2 class="ui header">
-                <div class="content">
-                    @Course.Name
-                </div>
-            </h2>
-
-            <div class="ui borderless menu top attached">
-                @if (!ShowInfected)
-                {
-                    <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
-
-                }
-                else
-                {
-                    <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
-                }
-
-                <div data-tooltip="結果をCSV形式でダウンロード">
-                    <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
-                </div>
-
-                <div data-tooltip="新着メールの確認">
-                    <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
-                </div>
-
-                <AuthorizeView Roles="Admin" Context="adminContext">
-                    <div data-tooltip="全メールの再確認">
-                        <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
+            <div class="ui basic segment">
+                <h2 class="ui header">
+                    <div class="content">
+                        @Course.Name
                     </div>
-                </AuthorizeView>
+                </h2>
 
-                <div class="small item">
-                    @MailMessage
-                </div>
+                <div class="ui borderless menu top attached">
+                    @if (!ShowInfected)
+                    {
+                        <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
 
-                <div class="right borderless menu">
-                    <div class="item" style="width: 50em">
-                        <div class="ui transparent left icon input">
-                            <i class="terminal icon"></i>
-                            <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
+                    }
+                    else
+                    {
+                        <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
+                    }
+
+                    <div data-tooltip="結果をCSV形式でダウンロード">
+                        <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
+                    </div>
+
+                    <div data-tooltip="新着メールの確認">
+                        <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
+                    </div>
+
+                    <AuthorizeView Roles="Admin" Context="adminContext">
+                        <div data-tooltip="全メールの再確認">
+                            <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
+                        </div>
+                    </AuthorizeView>
+
+                    <div class="small item">
+                        @MailMessage
+                    </div>
+
+                    <div class="right borderless menu">
+                        <div class="item" style="width: 50em">
+                            <div class="ui transparent left icon input">
+                                <i class="terminal icon"></i>
+                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='(e) => { if (e.Key == "Enter") { Filter(FilterString); } }'>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
 
-            <div class="ui menu attached">
-                <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
-                @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
-                {
-                    var xs = button.Split(":", 2);
-                    if (xs.Count() >= 2)
+                <div class="ui menu attached">
+                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='() => { FilterString = ""; Filter(""); }'>リセット</a></div>
+                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                     {
-                        <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
+                        var xs = button.Split(":", 2);
+                        if (xs.Count() >= 2)
+                        {
+                            <a class="item" @onclick='() => { SetFiltering(xs[1]); }'>@xs[0]</a>
+                        }
                     }
-                }
-            </div>
+                </div>
 
-            @if (string.IsNullOrWhiteSpace(ErrorMessage))
-            {
-                <Paginated Collection="@HealthList" @ref="@Pagination" CssClass="attached" EntriesPerPage="100">
-                    <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
+                @if (string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    <table class="ui very compact table @(HasPagination ? "" : "bottom") attached">
                         <thead>
                             <tr>
                                 <th class="single line">
@@ -137,7 +136,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var health in Pagination.ShowedModels)
+                            @foreach (var health in HealthList)
                             {
                                 var style = "";
                                 if (health.IsEmptyData)
@@ -301,20 +300,41 @@
                             }
                         </tbody>
                     </table>
-                </Paginated>
-            }
-            else
-            {
-                <div class="ui segment bottom attached">
-                    <div class="ui negative message">
-                        <p>フィルタ式の構文エラーです:</p>
-                        <div class="ui message">
-                            <pre>@ErrorMessage</pre>
+                    @if (HasPagination)
+                    {
+                        var previous = 0;
+                        <div class="ui center pagination menu bottom attached">
+                            @foreach (var i in pages)
+                            {
+                                if (previous + 1 != i)
+                                {
+                                    <div class="disabled item">...</div>
+                                }
+                                if (i == PageNumber)
+                                {
+                                    <div class="active item">@i</div>
+                                }
+                                else
+                                {
+                                    <a class="item" @onclick="() => GotoPage(i)">@i</a>
+                                }
+                                previous = i;
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="ui segment bottom attached">
+                        <div class="ui negative message">
+                            <p>フィルタ式の構文エラーです:</p>
+                            <div class="ui message">
+                                <pre>@ErrorMessage</pre>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
 
             @if (EV.IsShowUnsubmittedUsers())
             {
@@ -388,8 +408,8 @@
                 }
             }
         }
-    </Authorized>
-</AuthorizeView>
+        </Authorized>
+    </AuthorizeView>
 
 
 
@@ -403,10 +423,14 @@
 
     protected DateTime ussDate { get; set; } = DateTime.Today;
 
-    protected Paginated<Health> Pagination;
+    public bool HasPagination { get { return (pages?.Count() ?? 0) > 1; } }
+    protected int PageNumber { get; set; } = 1;
+    protected int EntriesPerPage { get; set; } = 100;
+    protected IEnumerable<int> pages;
 
     protected Course Course { get; set; }
-    protected IEnumerable<Health> HealthList { get; set; }
+    protected IQueryable<Health> HealthQuery { get; set; }
+    protected IEnumerable<Health> HealthList { get; set; } = new Health[0] { };
     protected string FilterString = "";
     protected bool Loaded = false;
     protected bool Allowed = false;
@@ -421,10 +445,7 @@
         Loaded = false;
         Notifier.Notify += OnNotify;
         await Update();
-
         SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
-        HealthList = Health.Search(DB.Context, EV, id, FilterString);
-
     }
 
     public async Task OnNotify()
@@ -436,7 +457,23 @@
     {
         Notifier.Notify -= OnNotify;
     }
+    public void UpdatePagination()
+    {
+        var cnt = HealthQuery.Count();
+        var total = cnt / EntriesPerPage + (cnt % EntriesPerPage > 0 ? 1 : 0);
+        var head = Enumerable.Range(1, 3);
+        var around = Enumerable.Range(PageNumber - 3, 7);
+        var tail = Enumerable.Range(total - 2, 3);
+        HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        pages = head.Concat(around).Concat(tail).OrderBy(x => x).Where(x => x > 0 && x <= total).Distinct();
+    }
 
+    protected void GotoPage(int i)
+    {
+        PageNumber = i;
+        HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        UpdatePagination();
+    }
 
     protected async Task Update()
     {
@@ -451,9 +488,6 @@
             if (Course != null)
             {
                 Allowed = true;
-
-                // SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
-                // HealthList = Health.Search(DB.Context, EV, id, FilterString);
             }
         }
 
@@ -637,7 +671,9 @@
         else
         {
             ErrorMessage = "";
-            HealthList = Health.Search(DB.Context, EV, Course.Id, filterString);
+            HealthQuery = Health.Search(DB.Context, EV, Course.Id, filterString);
+            HealthList = HealthQuery;
+            UpdatePagination();
         }
     }
 

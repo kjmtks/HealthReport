@@ -65,6 +65,7 @@ namespace NCVC.App.Services
                             {
                                 if (!r.EndOfStream)
                                 {
+                                    var num = 0;
                                     r.ReadLine(); // skip header row
                                     while (!r.EndOfStream)
                                     {
@@ -74,15 +75,24 @@ namespace NCVC.App.Services
                                         if (msg.Envelope.Subject.Contains(normal_subject) && row.Count() >= 16)
                                         {
                                             addHealthDateResults.Add(addHealthData(course, row.ToArray(), received_at, msg.Index, false));
+                                            num++;
                                         }
                                         if (msg.Envelope.Subject.Contains(infected_subject) && row.Count() >= 19)
                                         {
                                             addHealthDateResults.Add(addHealthData(course, row.ToArray(), received_at, msg.Index, true));
+                                            num++;
+                                        }
+
+                                        if(num % 1000 == 0)
+                                        {
+                                            Context.SaveChanges();
+                                            Console.WriteLine($"Reading health data from #'{msg.Index}': {num}");
                                         }
                                     }
                                 }
                             }
                             Context.SaveChanges();
+                            Console.WriteLine($"Finishing reading health data from #'{msg.Index}'");
                         }
                     }
                 }
@@ -235,7 +245,6 @@ namespace NCVC.App.Services
                 health.InfectedStringColumn9 = row[17].Trim();
                 health.InfectedStringColumn10 = row[18].Trim();
             }
-
             if (!existed)
             {
                 Context.Add(health);
