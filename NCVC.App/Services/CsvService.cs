@@ -98,7 +98,7 @@ namespace NCVC.App.Services
                     Operator = staff,
                     OperatedAt = DateTime.Now,
                     LastIndex = lastIndex,
-                    Course = course
+                    CourseId = course.Id
                 };
                 Context.Add(history);
                 Context.SaveChanges();
