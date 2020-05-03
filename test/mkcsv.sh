@@ -1,7 +1,7 @@
 #!/bin/sh
 
-N0=200
-N=500
+N0=1
+N=10000
 Year=2020
 for Month in 4
 do
