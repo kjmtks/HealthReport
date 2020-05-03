@@ -7,6 +7,7 @@
 @inject IConfiguration Config;
 @inject AuthenticationStateProvider Auth;
 @inject EnvironmentVariableService EV;
+@inject CsvService CSV;
 
 
 
@@ -72,30 +73,30 @@
 
                 try
                 {
-                    int index, count;
+                    int index, count, numOfNewData, numOfUpdated;
                     if (IsAll)
                     {
-                        (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, Course.ImapMailIndexOffset);
+                        (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course);
                     }
                     else
                     {
                         var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
                         if (lastHistroy == null)
                         {
-                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, Course.ImapMailIndexOffset);
+                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course);
                         }
                         else
                         {
-                            (index, count) = await CsvGetter.LoadReceivedCsv(DB.Context, EV, Course, staff, lastHistroy.LastIndex);
+                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course, lastHistroy.LastIndex);
                         }
                     }
-                    if(count == 0)
+                    if (count == 0)
                     {
                         MailMessage = "新着メールはありません．";
                     }
                     else
                     {
-                        MailMessage = "データベースを更新しました．";
+                        MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを受け取りました．";
                     }
                 }
                 catch (Exception e)

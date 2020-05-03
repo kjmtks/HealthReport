@@ -169,7 +169,6 @@ namespace NCVC.App.Models
 
         public string Hash { get; set; } // 報告者IDのこと
 
-        public DateTime LastUploadedAt { get; set; }
         public virtual ICollection<Health> HealthList { get; set; } = new List<Health>();
 
         public virtual ICollection<CourseStudentAssignment> CourseAssignments { get; set; } = new List<CourseStudentAssignment>();

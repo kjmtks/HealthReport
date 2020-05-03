@@ -63,8 +63,8 @@ namespace NCVC.App
             services.AddScoped<DatabaseService>();
 
             services.AddSingleton<NotifierService>();
-
             services.AddSingleton<EnvironmentVariableService>();
+            services.AddScoped<CsvService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
