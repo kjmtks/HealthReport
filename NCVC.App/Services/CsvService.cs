@@ -23,7 +23,7 @@ namespace NCVC.App.Services
             EnvironmentVariable = environmentVariable;
         }
 
-        public async Task<(int, int, int, int)> PullCsv(Course course, int? index = null)
+        public async Task<(int, int, int, int)> PullCsv(Staff staff, Course course, int? index = null)
         {
             int count = 0;
             int lastIndex = index.HasValue ? index.Value : course.ImapMailIndexOffset;
@@ -88,6 +88,22 @@ namespace NCVC.App.Services
                 }
                 client.Disconnect(true);
             }
+
+
+            if (count > 0)
+            {
+                var history = new History()
+                {
+                    Count = count,
+                    Operator = staff,
+                    OperatedAt = DateTime.Now,
+                    LastIndex = lastIndex,
+                    Course = course
+                };
+                Context.Add(history);
+                Context.SaveChanges();
+            }
+
             return (lastIndex, count, addHealthDateResults.Where(x => x == AddHealthDateResult.AddNewData).Count(), addHealthDateResults.Where(x => x == AddHealthDateResult.UpdateData).Count());
         }
 

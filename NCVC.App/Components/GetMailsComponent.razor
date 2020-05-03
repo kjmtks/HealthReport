@@ -76,18 +76,18 @@
                     int index, count, numOfNewData, numOfUpdated;
                     if (IsAll)
                     {
-                        (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course);
+                        (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course);
                     }
                     else
                     {
                         var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
                         if (lastHistroy == null)
                         {
-                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course);
+                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course);
                         }
                         else
                         {
-                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(Course, lastHistroy.LastIndex);
+                            (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course, lastHistroy.LastIndex);
                         }
                     }
                     if (count == 0)
