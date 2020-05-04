@@ -37,14 +37,22 @@ namespace NCVC.App.Models
             return rs;
         }
 
-        public IQueryable<Health> Filtering(DatabaseContext context, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        public (int, IQueryable<Health>) Filtering(DatabaseContext context, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (query == null)
             {
-                return null;
+                return (0, null);
             }
 
-            if(numOfDaysToSearch.HasValue)
+            var sql_for_count  = buildSql(@"h.""Id""", timeframes, startDate, numOfDaysToSearch);
+            var sql_for_search = buildSql("*", timeframes, startDate, numOfDaysToSearch);
+            var count = context.HealthList.FromSqlRaw(sql_for_count).Count();
+            return (count, Sort(context.HealthList.FromSqlRaw(sql_for_search).Include(x => x.Student)));
+        }
+
+        private string buildSql(string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        {
+            if (numOfDaysToSearch.HasValue)
             {
                 var d = DateTime.Today.AddDays(-numOfDaysToSearch.Value);
                 if (startDate < d)
@@ -55,11 +63,10 @@ namespace NCVC.App.Models
             var span = DateTime.Today - startDate;
             string stc = string.Format(@"(date '{0:0000}-{1:00}-{2:00}' + arr.i) AS ""MeasuredAt"",", startDate.Year, startDate.Month, startDate.Day);
 
-
             var sql = new System.Text.StringBuilder();
             sql.Append(@$"
 SELECT
-  *
+  {columns}
 FROM
   (SELECT
     DISTINCT on (h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"")
@@ -179,8 +186,7 @@ FROM
                 sql.Append(" WHERE ");
                 sql.Append(where);
             }
-
-            return Sort(context.HealthList.FromSqlRaw(sql.ToString()).Include(x => x.Student));
+            return sql.ToString();
         }
 
         //---

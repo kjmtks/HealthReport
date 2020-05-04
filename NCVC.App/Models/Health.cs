@@ -206,15 +206,13 @@ namespace NCVC.App.Models
             }
         }
 
-        public static IQueryable<Health> Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString, int? page = null, int? numPerPage = null)
+        public static (int, IQueryable<Health>) Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString, int? page = null, int? numPerPage = null)
         {
             var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             var fc = new FilterCompiler(filterString);
-            var result = fc.Filtering(context, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
-
-            return result;
+            return fc.Filtering(context, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
         }
     }
 }

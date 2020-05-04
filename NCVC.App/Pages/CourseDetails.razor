@@ -361,6 +361,7 @@
 
     protected DateTime ussDate { get; set; } = DateTime.Today;
 
+    protected int Count = 0;
     public bool HasPagination { get { return (pages?.Count() ?? 0) > 1; } }
     protected int PageNumber { get; set; } = 1;
     protected int EntriesPerPage { get; set; } = 100;
@@ -399,8 +400,7 @@
     }
     public async Task UpdatePaginationAsync()
     {
-        var cnt = HealthQuery.Count();
-        var total = cnt / EntriesPerPage + (cnt % EntriesPerPage > 0 ? 1 : 0);
+        var total = Count / EntriesPerPage + (Count % EntriesPerPage > 0 ? 1 : 0);
         var head = Enumerable.Range(1, 3);
         var around = Enumerable.Range(PageNumber - 3, 7);
         var tail = Enumerable.Range(total - 2, 3);
@@ -616,7 +616,7 @@
         else
         {
             ErrorMessage = "";
-            HealthQuery = Health.Search(DB.Context, EV, Course.Id, filterString);
+            (Count, HealthQuery) = Health.Search(DB.Context, EV, Course.Id, filterString);
             await GotoPageAsync(1);
             await UpdatePaginationAsync();
         }
