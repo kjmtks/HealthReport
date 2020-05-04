@@ -178,7 +178,7 @@ FROM
             var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
             {
-                conditions.Add(string.Format(@"h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}')", startDate.Year, startDate.Month, startDate.Day));
+                conditions.Add(string.Format(@"(h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}'))", startDate.Year, startDate.Month, startDate.Day));
             }
             var where = string.Join(" AND ", conditions);
             if (!string.IsNullOrWhiteSpace(where))
