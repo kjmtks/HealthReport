@@ -47,7 +47,7 @@ namespace NCVC.App.Models
             if(numOfDaysToSearch.HasValue)
             {
                 var d = DateTime.Today.AddDays(-numOfDaysToSearch.Value);
-                if (startDate > d)
+                if (startDate < d)
                 {
                     startDate = d;
                 }
