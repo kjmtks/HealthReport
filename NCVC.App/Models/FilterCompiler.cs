@@ -554,19 +554,19 @@ OR (h.""StringColumn12"" <> '' OR h.""StringColumn12"" IS NULL) )";
             {
                 var lhs = toSqlStringExpr(ssw.Item1);
                 var rhs = toSqlStringExpr(ssw.Item2);
-                return $"({lhs} LIKE '{rhs.Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}%' AND {lhs} IS NOT NULL)";
+                return $"({lhs} LIKE '{rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}%' AND {lhs} IS NOT NULL)";
             }
             if (atom is QueryParser.BooleanAtom.SEndWith sew)
             {
                 var lhs = toSqlStringExpr(sew.Item1);
                 var rhs = toSqlStringExpr(sew.Item2);
-                return $"({lhs} LIKE '%{rhs.Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}' AND {lhs} IS NOT NULL)";
+                return $"({lhs} LIKE '%{rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}' AND {lhs} IS NOT NULL)";
             }
             if (atom is QueryParser.BooleanAtom.SHas shs)
             {
                 var lhs = toSqlStringExpr(shs.Item1);
                 var rhs = toSqlStringExpr(shs.Item2);
-                return $"({lhs} LIKE '% {rhs.Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")} %' AND {lhs} IS NOT NULL)";
+                return $"({lhs} LIKE '% {rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")} %' AND {lhs} IS NOT NULL)";
             }
 
             if (atom is QueryParser.BooleanAtom.SNe sne)
