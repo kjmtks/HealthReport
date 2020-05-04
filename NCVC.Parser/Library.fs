@@ -34,6 +34,10 @@ module QueryParser =
         | Mul of DecimalExpr * DecimalExpr
         | Div of DecimalExpr * DecimalExpr
 
+    type DateTimeSpan =
+        | Day
+        | Month
+
     type DateAtom =
         | MeasuredDate
         | DateLiteral of int * int * int
@@ -271,6 +275,118 @@ module QueryParser =
         | Success (_, _, _) ->  None
         | Failure (errmsg, _, _) -> Some(errmsg)
 
+
+
+
+    let BooleanExprToPgsqlExprString (expr : BooleanExpr) : string =
+        let rec _booleanAtom (atom : BooleanAtom) =
+            match atom with
+            | BooleanAtom.True -> "TRUE"
+            | BooleanAtom.False -> "FALSE"
+            | BooleanAtom.IsInfected -> @"h.""IsInfected"""
+            | BooleanAtom.IsSubmitted -> @"(NOT h.""IsEmptyData"")"
+            | BooleanAtom.HasError -> @"(h.""BodyTemperature"" >= 37.5
+OR (h.""StringColumn1"" <> '無' AND h.""StringColumn1"" <> 'N')
+OR (h.""StringColumn2"" <> '無' AND h.""StringColumn2"" <> 'N')
+OR (h.""StringColumn3"" <> '無' AND h.""StringColumn3"" <> 'N')
+OR (h.""StringColumn4"" <> '無' AND h.""StringColumn4"" <> 'N')
+OR (h.""StringColumn5"" <> '無' AND h.""StringColumn5"" <> 'N')
+OR (h.""StringColumn6"" <> '無' AND h.""StringColumn6"" <> 'N')
+OR (h.""StringColumn7"" <> '無' AND h.""StringColumn7"" <> 'N')
+OR (h.""StringColumn8"" <> '無' AND h.""StringColumn8"" <> 'N')
+OR (h.""StringColumn9"" <> '' OR h.""StringColumn9"" IS NULL)
+OR (h.""StringColumn10"" <> '無' AND h.""StringColumn10"" <> 'N')
+OR (h.""StringColumn11"" <> '無' AND h.""StringColumn11"" <> 'N')
+OR (h.""StringColumn12"" <> '' OR h.""StringColumn12"" IS NULL) )"
+            | BooleanAtom.HasWarning -> @"(h.""BodyTemperature"" >= 37.0)"
+            | BooleanAtom.SEq (lhs, rhs) -> sprintf "(%s = %s)" (_stringExpr lhs) (_stringExpr rhs)
+            | BooleanAtom.SNe (lhs, rhs) -> sprintf "(%s <> %s)" (_stringExpr lhs) (_stringExpr rhs)
+            | BooleanAtom.SStartWith (lhs, rhs) ->
+                sprintf "(%s LIKE '%s%%' AND %s IS NOT NULL)"
+                    (_stringExpr lhs)
+                    ((_stringExpr rhs).Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%"))
+                    (_stringExpr lhs)
+            | BooleanAtom.SEndWith (lhs, rhs) ->
+                sprintf "(%s LIKE '%%%s' AND %s IS NOT NULL)"
+                    (_stringExpr lhs)
+                    ((_stringExpr rhs).Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%"))
+                    (_stringExpr lhs)
+            | BooleanAtom.SHas (lhs, rhs) ->
+                sprintf "(%s LIKE '%% %s %%' AND %s IS NOT NULL)"
+                    (_stringExpr lhs)
+                    ((_stringExpr rhs).Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%"))
+                    (_stringExpr lhs)
+            | BooleanAtom.DeEq (lhs, rhs) -> sprintf "(%s = %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DeNe (lhs, rhs) -> sprintf "(%s <> %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DeGt (lhs, rhs) -> sprintf "(%s > %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DeGe (lhs, rhs) -> sprintf "(%s >= %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DeLt (lhs, rhs) -> sprintf "(%s < %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DeLe (lhs, rhs) -> sprintf "(%s <= %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | BooleanAtom.DtEq (lhs, rhs) -> sprintf "(%s = %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+            | BooleanAtom.DtNe (lhs, rhs) -> sprintf "(%s <> %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+            | BooleanAtom.DtGt (lhs, rhs) -> sprintf "(%s > %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+            | BooleanAtom.DtGe (lhs, rhs) -> sprintf "(%s >= %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+            | BooleanAtom.DtLt (lhs, rhs) -> sprintf "(%s < %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+            | BooleanAtom.DtLe (lhs, rhs) -> sprintf "(%s <= %s)" (_dateExpr lhs |> fst) (_dateExpr rhs |> fst)
+        and _stringAtom (atom : StringAtom) : string =
+            match atom with
+            | StringAtom.UserId -> @"h.""Account"""
+            | StringAtom.Tag -> @"(' ' || h.""Tags"" || ' ')"
+            | StringAtom.TimeFrame -> @"h.""TimeFrame"""
+            | StringAtom.StringLiteral literal -> sprintf "'%s'" (literal.Replace("'", "''"))
+        and _decimalAtom (atom : DecimalAtom) : string =
+            match atom with
+            | DecimalAtom.BodyTemperature -> @"h.""BodyTemperature"""
+            | DecimalAtom.DecimalLiteral literal -> literal.ToString()
+        and _dateAtom (atom : DateAtom) : (string * DateTimeSpan) =
+            match atom with
+            | DateAtom.MeasuredDate -> (@"h.""MeasuredAt""", DateTimeSpan.Day)
+            | DateAtom.DateLiteral (y, m, d) -> (sprintf "(date '%04d-%02d-%02d')" y m d, DateTimeSpan.Day)
+            | DateAtom.Today ->
+                let today = System.DateTime.Today;
+                in (sprintf "(date '%04d-%02d-%02d')" today.Year today.Month today.Day, DateTimeSpan.Day)
+            | DateAtom.ThisWeek ->
+                let today = System.DateTime.Today
+                let diff = (7 + ((int today.DayOfWeek) - (int System.DayOfWeek.Monday))) % 7
+                let start = today.AddDays(float -diff).Date
+                in (sprintf "(date '%04d-%02d-%02d')" start.Year start.Month start.Day, DateTimeSpan.Day)
+            | DateAtom.ThisMonth ->
+                let today = System.DateTime.Today;
+                in (sprintf "(date '%04d-%02d-%02d')" today.Year today.Month 1, DateTimeSpan.Month)
+        and _booleanExpr (expr : BooleanExpr) : string =
+            match expr with
+            | BooleanAtom atom -> _booleanAtom atom
+            | Eq (lhs, rhs) -> sprintf "(%s = %s)" (_booleanExpr lhs) (_booleanExpr rhs)
+            | Ne (lhs, rhs) -> sprintf "(%s <> %s)" (_booleanExpr lhs) (_booleanExpr rhs)
+            | Neg inner -> sprintf "(NOT %s)" (_booleanExpr inner)
+            | Conj (lhs, rhs) -> sprintf "(%s AND %s)" (_booleanExpr lhs) (_booleanExpr rhs)
+            | Disj (lhs, rhs) -> sprintf "(%s OR %s)" (_booleanExpr lhs) (_booleanExpr rhs)
+            | Impl (lhs, rhs) -> sprintf "((NOT %s) OR %s)" (_booleanExpr lhs) (_booleanExpr rhs)
+        and _stringExpr (expr : StringExpr) : string =
+            match expr with
+            | StringAtom atom -> _stringAtom atom
+        and _decimalExpr (expr : DecimalExpr) : string =
+            match expr with
+            | DecimalAtom atom -> _decimalAtom atom
+            | Sum (lhs, rhs) -> sprintf "(%s + %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | Sub (lhs, rhs) -> sprintf "(%s - %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | Mul (lhs, rhs) -> sprintf "(%s * %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | Div (lhs, rhs) -> sprintf "(%s / %s)" (_decimalExpr lhs) (_decimalExpr rhs)
+            | Minus inner -> sprintf "(-%s)" (_decimalExpr inner)
+        and _dateExpr (expr : DateExpr) : (string * DateTimeSpan) =
+            match expr with
+            | DateAtom atom -> _dateAtom atom
+            | AddDate (lhs, rhs) ->
+                let date, span = _dateExpr lhs
+                match span with
+                | DateTimeSpan.Day ->  (sprintf "(%s + (interval '%s day'))" date (_decimalExpr rhs), DateTimeSpan.Day)
+                | DateTimeSpan.Month ->  (sprintf "(%s + (interval '%s month'))" date (_decimalExpr rhs), DateTimeSpan.Month)
+            | ReduceDate (lhs, rhs) ->
+                let date, span = _dateExpr lhs
+                match span with
+                | DateTimeSpan.Day ->  (sprintf "(%s - (interval '%s day'))" date (_decimalExpr rhs), DateTimeSpan.Day)
+                | DateTimeSpan.Month ->  (sprintf "(%s - (interval '%s month'))" date (_decimalExpr rhs), DateTimeSpan.Month)
+        _booleanExpr expr
 
     let GetReferences (expr : BooleanExpr) : Reference list =
         let rec _booleanAtom (atom : BooleanAtom) (xs : Reference list) =

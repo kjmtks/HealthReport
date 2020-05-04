@@ -13,7 +13,7 @@ namespace NCVC.App.Models
     public class SeedData
     {
         public static void Initialize(DatabaseContext context, IConfiguration config)
-        { 
+        {
             var t = context.Staffs.AnyAsync();
             t.Wait();
             if (t.Result)

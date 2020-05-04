@@ -181,7 +181,7 @@ FROM
   ) as h
 ");
 
-            var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
+            var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
             {
                 conditions.Add(string.Format(@"(h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}'))", startDate.Year, startDate.Month, startDate.Day));
@@ -455,24 +455,24 @@ FROM
             }
             if (atom is QueryParser.DateAtom.DateLiteral literal)
             {
-                return (string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", literal.Item1, literal.Item2,literal.Item3), DateTimeSpan.Days);
+                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", literal.Item1, literal.Item2,literal.Item3), DateTimeSpan.Days);
             }
             if (atom.IsToday)
             {
-                return (string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day), DateTimeSpan.Days);
+                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day), DateTimeSpan.Days);
             }
             if (atom.IsThisWeek)
             {
                 var today = DateTime.Today;
                 int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
                 var start = today.AddDays(-1 * diff).Date;
-                return (string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Days);
+                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Days);
             }
             if (atom.IsThisMonth)
             {
                 var today = DateTime.Today;
                 var start = new DateTime(today.Year, today.Month, 1);
-                return (string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Months);
+                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Months);
             }
             throw new NotImplementedException();
         }
