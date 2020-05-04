@@ -29,6 +29,8 @@ namespace NCVC.App.Services
             int lastIndex = index.HasValue ? index.Value : course.ImapMailIndexOffset;
             var addHealthDateResults = new List<AddHealthDateResult>();
 
+            var reporterIds = course.StudentAssignments.Select(x => x.Student.Hash).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
@@ -72,6 +74,10 @@ namespace NCVC.App.Services
                                         var flg = false;
                                         var line = r.ReadLine().Trim();
                                         var row = line.Split(",").Select(x => x.Trim(new char[] { '"', ' ' })).ToArray();
+                                        if(!reporterIds.Contains(row[0]))
+                                        {
+                                            continue;
+                                        }
                                         if (!DateTime.TryParseExact(row[2], new string[] { "yyyy/MM/dd", "yyyy/M/dd", "yyyy/MM/d", "yyyy/M/d" },
                                                 System.Globalization.CultureInfo.InvariantCulture,
                                                 System.Globalization.DateTimeStyles.None, out var date))

@@ -10,8 +10,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NCVC.App.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20200503022247_RemoveLastUpdatedAtFromStudent")]
-    partial class RemoveLastUpdatedAtFromStudent
+    [Migration("20200504085305_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -64,11 +64,17 @@ namespace NCVC.App.Migrations
                         .HasColumnType("character varying(64)")
                         .HasMaxLength(64);
 
+                    b.Property<int>("NumOfDaysToSearch")
+                        .HasColumnType("integer");
+
                     b.Property<string>("SecurityMode")
                         .HasColumnType("text");
 
                     b.Property<string>("StaffAccounts")
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
@@ -148,6 +154,9 @@ namespace NCVC.App.Migrations
                     b.Property<string>("InfectedStringColumn9")
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsEmptyData")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsInfected")
                         .HasColumnType("boolean");
 
@@ -155,7 +164,7 @@ namespace NCVC.App.Migrations
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("MeasuredAt")
-                        .HasColumnType("timestamp without time zone");
+                        .HasColumnType("Date");
 
                     b.Property<string>("RawUserId")
                         .HasColumnType("text");
