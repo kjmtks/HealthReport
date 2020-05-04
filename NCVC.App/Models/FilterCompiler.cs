@@ -37,20 +37,21 @@ namespace NCVC.App.Models
             return rs;
         }
 
-        public (int, IQueryable<Health>) Filtering(DatabaseContext context, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        public (int, IQueryable<Health>) Filtering(DatabaseContext context, int courseId, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (query == null)
             {
                 return (0, null);
             }
 
-            var sql_for_count  = buildSql(@"h.""Id""", timeframes, startDate, numOfDaysToSearch);
-            var sql_for_search = buildSql("*", timeframes, startDate, numOfDaysToSearch);
+            var sql_for_count  = buildSql(courseId, @"h.""Id""", timeframes, startDate, numOfDaysToSearch);
+            var sql_for_search = buildSql(courseId, "*", timeframes, startDate, numOfDaysToSearch);
             var count = context.HealthList.FromSqlRaw(sql_for_count).Count();
+            // Console.WriteLine(sql_for_search);
             return (count, Sort(context.HealthList.FromSqlRaw(sql_for_search).Include(x => x.Student)));
         }
 
-        private string buildSql(string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        private string buildSql(int courseId, string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (numOfDaysToSearch.HasValue)
             {
@@ -73,7 +74,7 @@ FROM
     h.*,
     s.""Account"",
     s.""Tags""
-  FROM (
+  FROM ((
     (SELECT
       (SELECT COALESCE(max(""Id""), 0) FROM ""Health"") + row_number() OVER () AS ""Id"",
       0 AS ""BodyTemperature"",
@@ -170,6 +171,11 @@ FROM
     ""Student"" AS s
   ON
     h.""StudentId"" = s.""Id""
+  )
+  INNER JOIN
+    ""CourseStudentAssignment"" AS a
+  ON
+    a.""StudentId"" = s.""Id"" AND a.""CourseId"" = {courseId}
   ORDER BY
     h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"", h.""IsEmptyData""
   ) as h

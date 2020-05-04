@@ -212,7 +212,7 @@ namespace NCVC.App.Models
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             var fc = new FilterCompiler(filterString);
-            return fc.Filtering(context, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
+            return fc.Filtering(context, courseId, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
         }
     }
 }
