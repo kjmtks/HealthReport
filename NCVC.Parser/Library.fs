@@ -13,12 +13,12 @@ module QueryParser =
         | BodyTemperature
         | UserId
         | TimeFrame
-        | HasTag
+        | Tag
 
     type StringAtom =
         | UserId
         | TimeFrame
-        | HasTag
+        | Tag
         | StringLiteral of string
     and StringExpr =
         | StringAtom of StringAtom
@@ -54,6 +54,9 @@ module QueryParser =
         | False
         | SEq of StringExpr * StringExpr
         | SNe of StringExpr * StringExpr
+        | SStartWith of StringExpr * StringExpr
+        | SEndWith of StringExpr * StringExpr
+        | SHas of StringExpr * StringExpr
         | DeEq of DecimalExpr * DecimalExpr
         | DeNe of DecimalExpr * DecimalExpr
         | DeGt of DecimalExpr * DecimalExpr
@@ -102,7 +105,7 @@ module QueryParser =
 
     let pstringUserId : Parser<StringAtom, UserState> = stringReturn "user" StringAtom.UserId
     let pstringTimeFrame : Parser<StringAtom, UserState> = stringReturn "timeframe" StringAtom.TimeFrame
-    let pstringHasTag : Parser<StringAtom, UserState> = stringReturn "tag" StringAtom.HasTag
+    let pstringHasTag : Parser<StringAtom, UserState> = stringReturn "tag" StringAtom.Tag
 
     let pstringLiteral : Parser<(StringAtom), UserState> =
         manyChars (noneOf ['"']) |> between (pchar '"') (pchar '"') .>> spaces |>> string |>> StringLiteral
@@ -194,6 +197,9 @@ module QueryParser =
         <|> attempt pbooleanIsInfected
         <|> attempt (pipe2 pstringExpr (spaces >>. pstring "==" >>. spaces >>. pstringExpr) (fun x y -> SEq(x, y)))
         <|> attempt (pipe2 pstringExpr (spaces >>. pstring "!=" >>. spaces >>. pstringExpr) (fun x y -> SNe(x, y)))
+        <|> attempt (pipe2 pstringExpr (spaces >>. pstring "=*" >>. spaces >>. pstringExpr) (fun x y -> SStartWith(x, y)))
+        <|> attempt (pipe2 pstringExpr (spaces >>. pstring "*=" >>. spaces >>. pstringExpr) (fun x y -> SEndWith(x, y)))
+        <|> attempt (pipe2 pstringExpr (spaces >>. pstring "->" >>. spaces >>. pstringExpr) (fun x y -> SHas(x, y)))
         <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "==" >>. spaces >>. pdecimalExpr) (fun x y -> DeEq(x, y)))
         <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring "!=" >>. spaces >>. pdecimalExpr) (fun x y -> DeNe(x, y)))
         <|> attempt (pipe2 pdecimalExpr (spaces >>. pstring ">"  >>. spaces >>. pdecimalExpr) (fun x y -> DeGt(x, y)))
@@ -275,6 +281,9 @@ module QueryParser =
             | BooleanAtom.HasWarning -> Reference.HasWarning::xs
             | BooleanAtom.SEq (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
             | BooleanAtom.SNe (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
+            | BooleanAtom.SStartWith (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
+            | BooleanAtom.SEndWith (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
+            | BooleanAtom.SHas (lhs, rhs) -> (_stringExpr lhs xs) @ (_stringExpr rhs xs) @ xs
             | BooleanAtom.DeEq (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
             | BooleanAtom.DeNe (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
             | BooleanAtom.DeGt (lhs, rhs) -> (_decimalExpr lhs xs) @ (_decimalExpr rhs xs) @ xs
@@ -291,7 +300,7 @@ module QueryParser =
         and _stringAtom (atom : StringAtom) (xs : Reference list) : Reference list =
             match atom with
             | StringAtom.UserId -> Reference.UserId::xs
-            | StringAtom.HasTag -> Reference.HasTag::xs
+            | StringAtom.Tag -> Reference.Tag::xs
             | StringAtom.TimeFrame -> Reference.TimeFrame::xs
             | _ -> xs
         and _decimalAtom (atom : DecimalAtom) (xs : Reference list) : Reference list =

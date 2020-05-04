@@ -11,7 +11,6 @@ namespace NCVC.App.Models
 {
     public class FilterCompiler
     {
-        private enum StringMatchMethod { Equals, FirstMatch, HasOne }
         private enum DateTimeSpan { Days, Months }
 
         private Microsoft.FSharp.Core.FSharpOption<Tuple<Microsoft.FSharp.Collections.FSharpList<QueryParser.BooleanExpr>, Microsoft.FSharp.Core.FSharpOption<Microsoft.FSharp.Collections.FSharpList<Tuple<QueryParser.SortingAttribute, QueryParser.SortingOrder>>>>> query;
@@ -205,13 +204,11 @@ ON
                 conditions.Add(string.Format(@"h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}')", startDate.Year, startDate.Month, startDate.Day));
             }
             var where = string.Join(" AND ", conditions);
-            if(!string.IsNullOrWhiteSpace(where))
+            if (!string.IsNullOrWhiteSpace(where))
             {
                 sql.Append(" WHERE ");
                 sql.Append(where);
             }
-
-            Console.WriteLine(sql.ToString());
 
             return Sort(context.HealthList.FromSqlRaw(sql.ToString()).Include(x => x.Student));
         }
@@ -396,27 +393,27 @@ ON
 
         //---
 
-        private static (string, StringMatchMethod) toSqlStringAtom(QueryParser.StringAtom atom)
+        private static string toSqlStringAtom(QueryParser.StringAtom atom)
         {
             if (atom.IsTimeFrame)
             {
-                return ("h.\"TimeFrame\"", StringMatchMethod.Equals);
+                return "h.\"TimeFrame\"";
             }
             if (atom.IsUserId)
             {
-                return ("s.\"Account\"", StringMatchMethod.FirstMatch);
+                return "s.\"Account\"";
             }
-            if (atom.IsHasTag)
+            if (atom.IsTag)
             {
-                return ("(' ' || s.\"Tags\" || ' ')", StringMatchMethod.HasOne);
+                return "(' ' || s.\"Tags\" || ' ')";
             }
             if (atom is QueryParser.StringAtom.StringLiteral literal)
             {
-                return ($"'{literal.Item.Replace('\'', ' ')}'", StringMatchMethod.Equals);
+                return $"'{literal.Item.Replace('\'', ' ')}'";
             }
             throw new NotImplementedException();
         }
-        private static (string, StringMatchMethod) toSqlStringExpr(QueryParser.StringExpr expr)
+        private static string toSqlStringExpr(QueryParser.StringExpr expr)
         {
             if (expr.Item is QueryParser.StringAtom atom)
             {
@@ -574,30 +571,28 @@ OR (h.""StringColumn12"" <> '' OR h.""StringColumn12"" IS NULL) )";
             {
                 var lhs = toSqlStringExpr(seq.Item1);
                 var rhs = toSqlStringExpr(seq.Item2);
-                switch ((lhs.Item2, rhs.Item2))
-                {
-                    case (StringMatchMethod.Equals, StringMatchMethod.Equals):
-                        return $"({lhs.Item1} = {rhs.Item1})";
-                    case (StringMatchMethod.Equals, StringMatchMethod.FirstMatch):
-                        return $"({rhs.Item1} LIKE '{lhs.Item1.Trim('\'')}%' AND {rhs.Item1} IS NOT NULL)";
-                    case (StringMatchMethod.Equals, StringMatchMethod.HasOne):
-                        return $"({rhs.Item1} LIKE '%{lhs.Item1.Trim('\'')}%' AND {rhs.Item1} IS NOT NULL)";
-
-                    case (StringMatchMethod.FirstMatch, StringMatchMethod.Equals):
-                        return $"({lhs.Item1} LIKE '{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-                    case (StringMatchMethod.FirstMatch, StringMatchMethod.FirstMatch):
-                        return $"({lhs.Item1} LIKE '%{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-                    case (StringMatchMethod.FirstMatch, StringMatchMethod.HasOne):
-                        return $"({lhs.Item1} LIKE '%{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-
-                    case (StringMatchMethod.HasOne, StringMatchMethod.Equals):
-                        return $"({lhs.Item1} LIKE '%{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-                    case (StringMatchMethod.HasOne, StringMatchMethod.FirstMatch):
-                        return $"({lhs.Item1} LIKE '%{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-                    case (StringMatchMethod.HasOne, StringMatchMethod.HasOne):
-                        return $"({lhs.Item1} LIKE '%{rhs.Item1.Trim('\'')}%' AND {lhs.Item1} IS NOT NULL)";
-                }
+                return $"({lhs} = {rhs})";
             }
+
+            if (atom is QueryParser.BooleanAtom.SStartWith ssw)
+            {
+                var lhs = toSqlStringExpr(ssw.Item1);
+                var rhs = toSqlStringExpr(ssw.Item2);
+                return $"({lhs} LIKE '{rhs.Trim('\'')}%' AND {lhs} IS NOT NULL)";
+            }
+            if (atom is QueryParser.BooleanAtom.SEndWith sew)
+            {
+                var lhs = toSqlStringExpr(sew.Item1);
+                var rhs = toSqlStringExpr(sew.Item2);
+                return $"({lhs} LIKE '%{rhs.Trim('\'')}' AND {lhs} IS NOT NULL)";
+            }
+            if (atom is QueryParser.BooleanAtom.SHas shs)
+            {
+                var lhs = toSqlStringExpr(shs.Item1);
+                var rhs = toSqlStringExpr(shs.Item2);
+                return $"({lhs} LIKE '% {rhs.Trim('\'')} %' AND {lhs} IS NOT NULL)";
+            }
+
             if (atom is QueryParser.BooleanAtom.SNe sne)
             {
                 return $"(NOT {toSqlBooleanAtom(QueryParser.BooleanAtom.NewSEq(sne.Item1, sne.Item2))})";
