@@ -34,6 +34,8 @@ namespace NCVC.App.Models
         public string Name { get; set; }
 
         public DateTime StartDate { get; set; } = DateTime.Today;
+
+        public int NumOfDaysToSearch { get; set; } = 60;
         public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         [Required, EmailAddress]

@@ -37,18 +37,6 @@ namespace NCVC.App.Services
             return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SHOW_UNSUBMITTED_USERS"));
         }
 
-        public int? GetNumOfDaysToSearch()
-        {
-            if(int.TryParse(Environment.GetEnvironmentVariable("DAYS_TO_SEARCH"), out var days))
-            {
-                return days;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         public IEnumerable<TimeFrame> GetTimeFrames()
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))

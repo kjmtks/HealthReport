@@ -77,10 +77,15 @@
                         <InputText @bind-Value="@EdittingModel.Name" />
                         <ValidationMessage For="@(() => EdittingModel.Name)" />
                     </div>
-                    <label>収集開始年月日</label>
                     <div class="field">
+                        <label>収集開始年月日</label>
                         <InputDate @bind-Value="@EdittingModel.StartDate" />
                         <ValidationMessage For="@(() => EdittingModel.StartDate)" />
+                    </div>
+                    <div class="field">
+                        <label>検索期間（当日からの日数）</label>
+                        <InputNumber @bind-Value="@EdittingModel.NumOfDaysToSearch" />
+                        <ValidationMessage For="@(() => EdittingModel.NumOfDaysToSearch)" />
                     </div>
                     <div class="field">
                         <label>受付メールアドレス</label>
