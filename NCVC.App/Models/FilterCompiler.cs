@@ -38,14 +38,28 @@ namespace NCVC.App.Models
             return rs;
         }
 
-        public IQueryable<Health> Filtering(DatabaseContext context, int? numOfDaysToSearch = null)
+        public IQueryable<Health> Filtering(DatabaseContext context, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (query == null)
             {
                 return null;
             }
+
+            if(numOfDaysToSearch.HasValue)
+            {
+                var d = DateTime.Today.AddDays(-numOfDaysToSearch.Value);
+                if (startDate > d)
+                {
+                    startDate = d;
+                }
+            }
+            var span = DateTime.Today - startDate;
+            string stc = string.Format(@"(date '{0:0000}-{1:00}-{2:00}' + arr.i) AS ""MeasuredAt"",", startDate.Year, startDate.Month, startDate.Day);
+
+
             var sql = new System.Text.StringBuilder();
-            sql.Append(@"SELECT 
+            sql.Append(@$"
+SELECT
     h.""Id"" AS ""Id"",
     h.""BodyTemperature"" AS ""BodyTemperature"",
     h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
@@ -85,13 +99,110 @@ namespace NCVC.App.Models
     h.""StudentId"" AS ""StudentId"",
     h.""TimeFrame"" AS ""TimeFrame"",
     h.""UploadedAt"" AS ""UploadedAt""
-FROM ""Health"" AS h INNER JOIN ""Student"" AS s ON h.""StudentId"" = s.""Id""");
+FROM (
+  (
+    SELECT
+      (SELECT COALESCE(max(""Id""), 0) FROM ""Health"") + row_number() OVER () AS ""Id"",
+      0 AS ""BodyTemperature"",
+      TRUE AS ""IsEmptyData"",
+      FALSE AS ""IsInfected"",
+      {stc}
+      t.regexp_split_to_table AS ""TimeFrame"",
+      u.""Id"" AS ""StudentId"",
+      0 AS ""InfectedBodyTemperature1"",
+      0 AS ""InfectedBodyTemperature2"",
+      '00:00:00' AS ""InfectedMeasuredTime1"",
+      '00:00:00' AS ""InfectedMeasuredTime2"",
+      0 AS ""InfectedOxygenSaturation1"",
+      0 AS ""InfectedOxygenSaturation2"",
+      '' AS ""InfectedStringColumn1"",
+      '' AS ""InfectedStringColumn2"",
+      '' AS ""InfectedStringColumn3"",
+      '' AS ""InfectedStringColumn4"",
+      '' AS ""InfectedStringColumn5"",
+      '' AS ""InfectedStringColumn6"",
+      '' AS ""InfectedStringColumn7"",
+      '' AS ""InfectedStringColumn8"",
+      '' AS ""InfectedStringColumn9"",
+      '' AS ""InfectedStringColumn10"",
+      0 AS ""MailIndex"",
+      '' AS ""RawUserId"",
+      '' AS ""RawUserName"",
+      '' AS ""StringColumn1"",
+      '' AS ""StringColumn2"",
+      '' AS ""StringColumn3"",
+      '' AS ""StringColumn4"",
+      '' AS ""StringColumn5"",
+      '' AS ""StringColumn6"",
+      '' AS ""StringColumn7"",
+      '' AS ""StringColumn8"",
+      '' AS ""StringColumn9"",
+      '' AS ""StringColumn10"",
+      '' AS ""StringColumn11"",
+      '' AS ""StringColumn12"",
+      (date '2020-01-01') AS ""UploadedAt""
+    FROM
+      generate_series(0, {span.Days}) AS arr(i),
+      (SELECT regexp_split_to_table('{string.Join(";", timeframes.Select(x => x.Name))}', ';')) AS t
+    CROSS JOIN
+      ""Student"" AS u
+  )
+  UNION
+  (
+    SELECT
+      h.""Id"" AS ""Id"",
+      h.""BodyTemperature"" AS ""BodyTemperature"",
+      h.""IsEmptyData"" AS ""IsEmptyData"",
+      h.""IsInfected"" AS ""IsInfected"",
+      h.""MeasuredAt"" AS ""MeasuredAt"",
+      h.""TimeFrame"" AS ""TimeFrame"",
+      h.""StudentId"" AS ""StudentId"",
+      h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
+      h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
+      h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
+      h.""InfectedMeasuredTime2"" AS ""InfectedMeasuredTime2"",
+      h.""InfectedOxygenSaturation1"" AS ""InfectedOxygenSaturation1"",
+      h.""InfectedOxygenSaturation2"" AS ""InfectedOxygenSaturation2"",
+      h.""InfectedStringColumn1"" AS ""InfectedStringColumn1"",
+      h.""InfectedStringColumn2"" AS ""InfectedStringColumn2"",
+      h.""InfectedStringColumn3"" AS ""InfectedStringColumn3"",
+      h.""InfectedStringColumn4"" AS ""InfectedStringColumn4"",
+      h.""InfectedStringColumn5"" AS ""InfectedStringColumn5"",
+      h.""InfectedStringColumn6"" AS ""InfectedStringColumn6"",
+      h.""InfectedStringColumn7"" AS ""InfectedStringColumn7"",
+      h.""InfectedStringColumn8"" AS ""InfectedStringColumn8"",
+      h.""InfectedStringColumn9"" AS ""InfectedStringColumn9"",
+      h.""InfectedStringColumn10"" AS ""InfectedStringColumn10"",
+      h.""MailIndex"" AS ""MailIndex"",
+      h.""RawUserId"" AS ""RawUserId"",
+      h.""RawUserName"" AS ""RawUserName"",
+      h.""StringColumn1"" AS ""StringColumn1"",
+      h.""StringColumn2"" AS ""StringColumn2"",
+      h.""StringColumn3"" AS ""StringColumn3"",
+      h.""StringColumn4"" AS ""StringColumn4"",
+      h.""StringColumn5"" AS ""StringColumn5"",
+      h.""StringColumn6"" AS ""StringColumn6"",
+      h.""StringColumn7"" AS ""StringColumn7"",
+      h.""StringColumn8"" AS ""StringColumn8"",
+      h.""StringColumn9"" AS ""StringColumn9"",
+      h.""StringColumn10"" AS ""StringColumn10"",
+      h.""StringColumn11"" AS ""StringColumn11"",
+      h.""StringColumn12"" AS ""StringColumn12"",
+      h.""UploadedAt"" AS ""UploadedAt""
+    FROM
+      ""Health"" AS h
+  )
+) as h
+INNER JOIN
+  ""Student"" AS s
+ON
+  h.""StudentId"" = s.""Id""
+");
 
-            var conditions = query.Value.Item1.Select(x => toSqlBooleanExpr(x)).ToList();
+            var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
             {
-                var today = string.Format("(date '{0:00}-{1:00}-{2:00} 00:00:00+09')", DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
-                conditions.Add(@$"h.""MeasuredAt"" >= {today} - (interval '{numOfDaysToSearch.Value} day')");
+                conditions.Add(string.Format(@"h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}')", startDate.Year, startDate.Month, startDate.Day));
             }
             var where = string.Join(" AND ", conditions);
             if(!string.IsNullOrWhiteSpace(where))
@@ -99,6 +210,9 @@ FROM ""Health"" AS h INNER JOIN ""Student"" AS s ON h.""StudentId"" = s.""Id""")
                 sql.Append(" WHERE ");
                 sql.Append(where);
             }
+
+            Console.WriteLine(sql.ToString());
+
             return Sort(context.HealthList.FromSqlRaw(sql.ToString()).Include(x => x.Student));
         }
 

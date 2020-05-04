@@ -33,6 +33,7 @@ namespace NCVC.App.Models
         [Required, StringLength(64)]
         public string Name { get; set; }
 
+        public DateTime StartDate { get; set; } = DateTime.Today;
         public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         [Required, EmailAddress]
@@ -73,6 +74,9 @@ namespace NCVC.App.Models
 
         public void CreateNew(DatabaseContext context, IConfiguration config)
         {
+            context.Add(this);
+            context.SaveChanges();
+
             var newStudents = (StudentAccounts ?? "").Split(new string[] { " ", "\t", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var s in newStudents)
             {
@@ -87,8 +91,6 @@ namespace NCVC.App.Models
                     context.Add(a);
                 }
             }
-
-            context.Add(this);
         }
 
         public void Update(DatabaseContext context, IConfiguration config, Course previous)

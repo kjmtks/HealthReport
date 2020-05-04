@@ -19,6 +19,8 @@ namespace NCVC.App.Models
         public int Id { get; set; }
         public string RawUserId { get; set; }
         public string RawUserName { get; set; }
+
+        [Column(TypeName = "Date")]
         public DateTime MeasuredAt { get; set; }
         public DateTime UploadedAt { get; set; }
         public string TimeFrame { get; set; }
@@ -210,7 +212,7 @@ namespace NCVC.App.Models
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             var fc = new FilterCompiler(filterString);
-            var result = fc.Filtering(context, ev.GetNumOfDaysToSearch());
+            var result = fc.Filtering(context, ev.GetTimeFrames(), course.StartDate, ev.GetNumOfDaysToSearch());
 
             return result;
         }

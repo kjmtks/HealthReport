@@ -111,6 +111,7 @@ namespace NCVC.App.Services
                 }
                 client.Disconnect(true);
 
+                /*
                 if (EnvironmentVariable.IsShowUnsubmittedUsers() && minDate.HasValue && maxDate.HasValue)
                 {
                     var num = 0;
@@ -152,6 +153,7 @@ namespace NCVC.App.Services
                     Context.SaveChanges();
                     Console.WriteLine($"Finishing reigstering dummy health data: {num}");
                 }
+                */
             }
 
 
