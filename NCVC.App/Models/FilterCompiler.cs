@@ -59,48 +59,15 @@ namespace NCVC.App.Models
             var sql = new System.Text.StringBuilder();
             sql.Append(@$"
 SELECT
-    h.""Id"" AS ""Id"",
-    h.""BodyTemperature"" AS ""BodyTemperature"",
-    h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
-    h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
-    h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
-    h.""InfectedMeasuredTime2"" AS ""InfectedMeasuredTime2"",
-    h.""InfectedOxygenSaturation1"" AS ""InfectedOxygenSaturation1"",
-    h.""InfectedOxygenSaturation2"" AS ""InfectedOxygenSaturation2"",
-    h.""InfectedStringColumn1"" AS ""InfectedStringColumn1"",
-    h.""InfectedStringColumn2"" AS ""InfectedStringColumn2"",
-    h.""InfectedStringColumn3"" AS ""InfectedStringColumn3"",
-    h.""InfectedStringColumn4"" AS ""InfectedStringColumn4"",
-    h.""InfectedStringColumn5"" AS ""InfectedStringColumn5"",
-    h.""InfectedStringColumn6"" AS ""InfectedStringColumn6"",
-    h.""InfectedStringColumn7"" AS ""InfectedStringColumn7"",
-    h.""InfectedStringColumn8"" AS ""InfectedStringColumn8"",
-    h.""InfectedStringColumn9"" AS ""InfectedStringColumn9"",
-    h.""InfectedStringColumn10"" AS ""InfectedStringColumn10"",
-    h.""IsEmptyData"" AS ""IsEmptyData"",
-    h.""IsInfected"" AS ""IsInfected"",
-    h.""MailIndex"" AS ""MailIndex"",
-    h.""MeasuredAt"" AS ""MeasuredAt"",
-    h.""RawUserId"" AS ""RawUserId"",
-    h.""RawUserName"" AS ""RawUserName"",
-    h.""StringColumn1"" AS ""StringColumn1"",
-    h.""StringColumn2"" AS ""StringColumn2"",
-    h.""StringColumn3"" AS ""StringColumn3"",
-    h.""StringColumn4"" AS ""StringColumn4"",
-    h.""StringColumn5"" AS ""StringColumn5"",
-    h.""StringColumn6"" AS ""StringColumn6"",
-    h.""StringColumn7"" AS ""StringColumn7"",
-    h.""StringColumn8"" AS ""StringColumn8"",
-    h.""StringColumn9"" AS ""StringColumn9"",
-    h.""StringColumn10"" AS ""StringColumn10"",
-    h.""StringColumn11"" AS ""StringColumn11"",
-    h.""StringColumn12"" AS ""StringColumn12"",
-    h.""StudentId"" AS ""StudentId"",
-    h.""TimeFrame"" AS ""TimeFrame"",
-    h.""UploadedAt"" AS ""UploadedAt""
-FROM (
-  (
-    SELECT
+  *
+FROM
+  (SELECT
+    DISTINCT on (h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"")
+    h.*,
+    s.""Account"",
+    s.""Tags""
+  FROM (
+    (SELECT
       (SELECT COALESCE(max(""Id""), 0) FROM ""Health"") + row_number() OVER () AS ""Id"",
       0 AS ""BodyTemperature"",
       TRUE AS ""IsEmptyData"",
@@ -146,7 +113,7 @@ FROM (
     CROSS JOIN
       ""Student"" AS u
   )
-  UNION
+  UNION ALL
   (
     SELECT
       h.""Id"" AS ""Id"",
@@ -190,12 +157,15 @@ FROM (
       h.""UploadedAt"" AS ""UploadedAt""
     FROM
       ""Health"" AS h
-  )
-) as h
-INNER JOIN
-  ""Student"" AS s
-ON
-  h.""StudentId"" = s.""Id""
+    )
+  ) as h
+  INNER JOIN
+    ""Student"" AS s
+  ON
+    h.""StudentId"" = s.""Id""
+  ORDER BY
+    h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"", h.""IsEmptyData""
+  ) as h
 ");
 
             var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
@@ -210,6 +180,7 @@ ON
                 sql.Append(where);
             }
 
+            Console.WriteLine(sql.ToString());
             return Sort(context.HealthList.FromSqlRaw(sql.ToString()).Include(x => x.Student));
         }
 
@@ -401,11 +372,11 @@ ON
             }
             if (atom.IsUserId)
             {
-                return "s.\"Account\"";
+                return "h.\"Account\"";
             }
             if (atom.IsTag)
             {
-                return "(' ' || s.\"Tags\" || ' ')";
+                return "(' ' || h.\"Tags\" || ' ')";
             }
             if (atom is QueryParser.StringAtom.StringLiteral literal)
             {
