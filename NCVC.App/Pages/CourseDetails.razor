@@ -618,7 +618,7 @@
         {
             ErrorMessage = "";
             HealthQuery = Health.Search(DB.Context, EV, Course.Id, filterString);
-            HealthList = HealthQuery;
+            await GotoPageAsync(1);
             await UpdatePaginationAsync();
         }
         Processing = false;
