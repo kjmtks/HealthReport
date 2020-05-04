@@ -53,8 +53,6 @@ namespace NCVC.App.Services
                 string normal_subject = EnvironmentVariable.GetMailSubject();
                 string infected_subject = EnvironmentVariable.GetMailInfectedSubject();
 
-                DateTime? minDate = null, maxDate = null;
-
                 foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(normal_subject) || x.Envelope.Subject.Contains(infected_subject)))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
@@ -80,9 +78,6 @@ namespace NCVC.App.Services
                                         {
                                             continue;
                                         }
-                                        if (minDate == null || minDate > date) minDate = date;
-                                        if (maxDate == null || maxDate < date) maxDate = date;
-
                                         if (msg.Envelope.Subject.Contains(normal_subject) && row.Count() >= 16)
                                         {
                                             addHealthDateResults.Add(addHealthData(course, row, date, received_at, msg.Index, false));
@@ -110,50 +105,6 @@ namespace NCVC.App.Services
                     }
                 }
                 client.Disconnect(true);
-
-                /*
-                if (EnvironmentVariable.IsShowUnsubmittedUsers() && minDate.HasValue && maxDate.HasValue)
-                {
-                    var num = 0;
-                    //var studentIds = Context.CourseStudentAssignments.Where(x => x.CourseId == course.Id).Select(x => x.StudentId).AsEnumerable();
-                    var studentIds = course.StudentAssignments.Select(x => x.StudentId);
-                    var tfs = EnvironmentVariable.GetTimeFrames() ?? new TimeFrame[] { null };
-                    var d = minDate.Value;
-                    var today = DateTime.Today;
-                    while (d <= maxDate.Value && d <= today)
-                    {
-                        foreach (var tf in tfs)
-                        {
-                            var timeframe = tf?.Name ?? "";
-                            foreach (var sid in studentIds)
-                            {
-                                var h = Context.HealthList.Where(x => x.StudentId == sid && x.MeasuredAt == d && x.TimeFrame == timeframe).FirstOrDefault();
-                                if(h == null)
-                                {
-                                    Context.Add(new Health()
-                                    {
-                                        IsEmptyData = true,
-                                        MeasuredAt = d,
-                                        TimeFrame = timeframe,
-                                        StudentId = sid
-                                    });
-                                    num++;
-                                    if (num % 1000 == 0)
-                                    {
-                                        Context.SaveChanges();
-                                        Console.WriteLine($"reigstering dummy health data: {num}");
-                                    }
-                                }
-                            }
-                        }
-                        
-                        d = d.AddDays(1);
-                    }
-
-                    Context.SaveChanges();
-                    Console.WriteLine($"Finishing reigstering dummy health data: {num}");
-                }
-                */
             }
 
 
