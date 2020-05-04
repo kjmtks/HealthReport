@@ -412,8 +412,7 @@
     {
         Processing = true;
         await InvokeAsync(() => StateHasChanged());
-        PageNumber = i;
-        HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage);
+        PageNumber = i;;
         await UpdatePaginationAsync();
         Processing = false;
         await InvokeAsync(() => StateHasChanged());
