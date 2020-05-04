@@ -32,11 +32,6 @@ namespace NCVC.App.Services
             return Environment.GetEnvironmentVariable("SUBDIR") ?? "";
         }
 
-        public bool IsShowUnsubmittedUsers()
-        {
-            return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SHOW_UNSUBMITTED_USERS"));
-        }
-
         public IEnumerable<TimeFrame> GetTimeFrames()
         {
             if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))

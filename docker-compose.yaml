@@ -14,7 +14,6 @@ services:
             ASPNETCORE_ENVIRONMENT: Development
             PROTOCOL: HTTP
             TITLE: "Health Report (development)"
-            SHOW_UNSUBMITTED_USERS: 1
             MAIL_SUBJECT: 健康フォローアップ用健康観察データの報告
             MAIL_INFECTED_SUBJECT: 【感染者用】健康観察データの報告
             TIMEFRAME: "午前 00:00:00-11:59:59; 午後 12:00:00-23:59:59"
