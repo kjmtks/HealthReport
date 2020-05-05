@@ -8,6 +8,7 @@
 @inject AuthenticationStateProvider Auth;
 @inject NotifierService Notifier;
 @inject NCVC.App.Services.EnvironmentVariableService EV;
+@inject CsvService CSV;
 @implements IDisposable;
 
 <AuthorizeView Roles="Staff">
@@ -16,338 +17,362 @@
         {
 
             <div class="ui basic segment">
-               
-                <div class="ui top aligned @(Processing ? "active" : "disabled") inverted dimmer">
-                    <div class="content">
-                        <h2 class="ui inverted icon header">
-                            <i class="spinner loading icon"></i>
-                        </h2>
-                    </div>
-                </div>
-
                 <h2 class="ui header">
                     <div class="content">
                         @Course.Name
                     </div>
                 </h2>
 
-                <div class="ui borderless menu top attached">
-                    @if (!ShowInfected)
-                    {
-                        <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
-
-                    }
-                    else
-                    {
-                        <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
-                    }
-
-                    <div data-tooltip="結果をCSV形式でダウンロード">
-                        <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
+                <div class="ui basic segment">
+                    <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+                        <div class="ui text loader">Please wait...</div>
                     </div>
 
-                    <div data-tooltip="新着メールの確認">
-                        <GetMailsComponent IsAll="false" Course="Course" CssClass="small item" @ref="GetMailsComponent1" />
-                    </div>
+                    <div class="ui borderless menu top attached">
+                        @if (!ShowInfected)
+                        {
+                            <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
 
-                    <AuthorizeView Roles="Admin" Context="adminContext">
-                        <div data-tooltip="全メールの再確認">
-                            <GetMailsComponent IsAll="true" Course="Course" CssClass="small item" @ref="GetMailsComponent2" />
+                        }
+                        else
+                        {
+                            <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
+                        }
+
+                        <div data-tooltip="結果をCSV形式でダウンロード">
+                            <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
                         </div>
-                    </AuthorizeView>
 
-                    <div class="small item">
-                        @MailMessage
-                    </div>
+                        <div data-tooltip="新着メールの確認">
+                            <a class="small item">
+                                @if (NewMailProcessing)
+                                {
+                                    <i class="icons">
+                                        <i class="notched circle loading icon"></i>
+                                    </i>
+                                }
+                                else
+                                {
+                                    <i class="icons" @onclick="async () => { await CheckMailAsync(false); }">
+                                        <i class="sync alternate icon"></i>
+                                    </i>
+                                }
+                            </a>
+                        </div>
 
-                    <div class="right borderless menu">
-                        <div class="item" style="width: 50em">
-                            <div class="ui transparent left icon input">
-                                <i class="terminal icon"></i>
-                                <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='async (e) => { if (e.Key == "Enter") { await FilterAsync(FilterString); } }'>
+                        <AuthorizeView Roles="Admin" Context="adminContext">
+                            <div data-tooltip="全メールの再確認">
+                                <a class="small item">
+                                    @if (AllMailProcessing)
+                                    {
+                                        <i class="icons">
+                                            <i class="notched circle loading icon"></i>
+                                        </i>
+                                    }
+                                    else
+                                    { 
+                                        <i class="icons" @onclick="async () => { await CheckMailAsync(true); }">
+                                            <i class="sync alternate icon"></i>
+                                            <i class="inverted corner add icon"></i>
+                                        </i>
+                                    }
+                                </a>
+                            </div>
+                        </AuthorizeView>
+
+                        <div class="small item">
+                            @MailMessage
+                        </div>
+
+                        <div class="right borderless menu">
+                            <div class="item" style="width: 50em">
+                                <div class="ui transparent left icon input">
+                                    <i class="terminal icon"></i>
+                                    <input type="text" placeholder="e.g. date<@DateTime.Now.Year/@DateTime.Now.Month/@DateTime.Now.Day order by ~date error" class="tt" @bind="FilterString" @onkeyup='async (e) => { if (e.Key == "Enter") { await FilterAsync(FilterString); } }'>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
 
-                <div class="ui menu attached">
-                    <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='async () => { FilterString = ""; await FilterAsync(""); }'>リセット</a></div>
-                    @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
-                    {
-                        var xs = button.Split(":", 2);
-                        if (xs.Count() >= 2)
+                    <div class="ui menu attached">
+                        <div data-tooltip="検索条件をリセット"><a class="active item" @onclick='async () => { FilterString = ""; await FilterAsync(""); }'>リセット</a></div>
+                        @foreach (var button in (Course.FilterButtons ?? "").Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None))
                         {
-                            <a class="item" @onclick='async () => { await SetFilteringAsync(xs[1]); }'>@xs[0]</a>
-                        }
-                    }
-                </div>
-
-                @if (string.IsNullOrWhiteSpace(ErrorMessage))
-                {
-                    <table class="ui very compact table @(HasPagination ? "" : "bottom") attached">
-                        <thead>
-                            <tr>
-                                <th class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOrderDescDateAsync"><i class="angle up icon"></i></a>
-                                    日付
-                                    <a href="javascript:void(0);" @onclick="SetOrderDateAsync"><i class="angle down icon"></i></a>
-                                </th>
-                                @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
-                                {
-                                    <th class="single line">
-                                        <a href="javascript:void(0);" @onclick="SetOrderDescTimeFrameAsync"><i class="angle up icon"></i></a>
-                                        時間帯
-                                        <a href="javascript:void(0);" @onclick="SetOrderTimeFrameAsync"><i class="angle down icon"></i></a>
-                                    </th>
-                                }
-                                <th colspan="2" class="single line">
-                                    <a href="javascript:void(0);" @onclick="SetOrderDescStudentAsync"><i class="angle up icon"></i></a>
-                                    観察対象者
-                                    <a href="javascript:void(0);" @onclick="SetOrderStudentAsync"><i class="angle down icon"></i></a>
-                                </th>
-                                @if (!ShowInfected)
-                                {
-                                    <th class="single line">体温</th>
-                                    <th class="single line">せき</th>
-                                    <th class="single line">息苦しさ</th>
-                                    <th class="single line">鼻水</th>
-                                    <th class="single line">のどの痛み</th>
-                                    <th class="single line">体のだるさ</th>
-                                    <th class="single line">下痢</th>
-                                    <th class="single line">頭痛</th>
-                                    <th class="single line">その他風邪症状</th>
-                                    <th class="single line">その他症状詳細</th>
-                                    <th class="single line">解熱剤・せき止め薬・かぜ薬等の服用</th>
-                                    <th class="single line">検査実施</th>
-                                    <th class="single line">検査結果</th>
-                                }
-                                else
-                                {
-                                    <th class="single line">記録時間1</th>
-                                    <th class="single line">体温1</th>
-                                    <th class="single line">酸素飽和度1</th>
-                                    <th class="single line">記録時間2</th>
-                                    <th class="single line">体温2</th>
-                                    <th class="single line">酸素飽和度2</th>
-                                    <th class="single line">せき</th>
-                                    <th class="single line">息苦しさ</th>
-                                    <th class="single line">体のだるさ</th>
-                                    <th class="single line">吐き気</th>
-                                    <th class="single line">下痢</th>
-                                    <th class="single line">意識障害</th>
-                                    <th class="single line">食事が食べられない</th>
-                                    <th class="single line">尿が出ていない</th>
-                                    <th class="single line">その他の症状</th>
-                                    <th class="single line">具体の症状</th>
-                                }
-                                <th class="single line">提出日</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var health in HealthList)
+                            var xs = button.Split(":", 2);
+                            if (xs.Count() >= 2)
                             {
-                                var style = "";
-                                if (health.IsEmptyData)
-                                {
-                                    style = "active";
-                                }
-                                else
-                                {
-                                    if (!ShowInfected)
-                                    {
-                                        if (health.HasWrongValue() || health.IsInfected)
-                                        {
-                                            style = "negative";
-                                        }
-                                        else if (health.HasWarnValue())
-                                        {
-                                            style = "warning";
-                                        }
-                                    }
-                                }
-                                <tr class="@style">
-                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetDateAsync(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                <a class="item" @onclick='async () => { await SetFilteringAsync(xs[1]); }'>@xs[0]</a>
+                            }
+                        }
+                    </div>
+
+                    @if (string.IsNullOrWhiteSpace(ErrorMessage))
+                    {
+                        <table class="ui very compact table @(HasPagination ? "" : "bottom") attached">
+                            <thead>
+                                <tr>
+                                    <th class="single line">
+                                        <a href="javascript:void(0);" @onclick="SetOrderDescDateAsync"><i class="angle up icon"></i></a>
+                                        日付
+                                        <a href="javascript:void(0);" @onclick="SetOrderDateAsync"><i class="angle down icon"></i></a>
+                                    </th>
                                     @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
                                     {
-                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                        <th class="single line">
+                                            <a href="javascript:void(0);" @onclick="SetOrderDescTimeFrameAsync"><i class="angle up icon"></i></a>
+                                            時間帯
+                                            <a href="javascript:void(0);" @onclick="SetOrderTimeFrameAsync"><i class="angle down icon"></i></a>
+                                        </th>
                                     }
-                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
-                                    <td>@health.Student.Name</td>
-
-                                    @if (health.IsEmptyData)
+                                    <th colspan="2" class="single line">
+                                        <a href="javascript:void(0);" @onclick="SetOrderDescStudentAsync"><i class="angle up icon"></i></a>
+                                        観察対象者
+                                        <a href="javascript:void(0);" @onclick="SetOrderStudentAsync"><i class="angle down icon"></i></a>
+                                    </th>
+                                    @if (!ShowInfected)
                                     {
-                                        if (!ShowInfected)
-                                        {
-                                            <td colspan="14">
-                                                未提出
-                                            </td>
-                                        }
-                                        else
-                                        {
-                                            <td colspan="17">
-                                                未提出
-                                            </td>
-                                        }
+                                        <th class="single line">体温</th>
+                                        <th class="single line">せき</th>
+                                        <th class="single line">息苦しさ</th>
+                                        <th class="single line">鼻水</th>
+                                        <th class="single line">のどの痛み</th>
+                                        <th class="single line">体のだるさ</th>
+                                        <th class="single line">下痢</th>
+                                        <th class="single line">頭痛</th>
+                                        <th class="single line">その他風邪症状</th>
+                                        <th class="single line">その他症状詳細</th>
+                                        <th class="single line">解熱剤・せき止め薬・かぜ薬等の服用</th>
+                                        <th class="single line">検査実施</th>
+                                        <th class="single line">検査結果</th>
+                                    }
+                                    else
+                                    {
+                                        <th class="single line">記録時間1</th>
+                                        <th class="single line">体温1</th>
+                                        <th class="single line">酸素飽和度1</th>
+                                        <th class="single line">記録時間2</th>
+                                        <th class="single line">体温2</th>
+                                        <th class="single line">酸素飽和度2</th>
+                                        <th class="single line">せき</th>
+                                        <th class="single line">息苦しさ</th>
+                                        <th class="single line">体のだるさ</th>
+                                        <th class="single line">吐き気</th>
+                                        <th class="single line">下痢</th>
+                                        <th class="single line">意識障害</th>
+                                        <th class="single line">食事が食べられない</th>
+                                        <th class="single line">尿が出ていない</th>
+                                        <th class="single line">その他の症状</th>
+                                        <th class="single line">具体の症状</th>
+                                    }
+                                    <th class="single line">提出日</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var health in HealthList)
+                                {
+                                    var style = "";
+                                    if (health.IsEmptyData)
+                                    {
+                                        style = "active";
                                     }
                                     else
                                     {
                                         if (!ShowInfected)
                                         {
-                                            if (health.IsInfected)
+                                            if (health.HasWrongValue() || health.IsInfected)
                                             {
-                                                <td colspan="13">
-                                                    <i class="attention icon"></i>感染中
+                                                style = "negative";
+                                            }
+                                            else if (health.HasWarnValue())
+                                            {
+                                                style = "warning";
+                                            }
+                                        }
+                                    }
+                                    <tr class="@style">
+                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetDateAsync(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                        @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                                        {
+                                            <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                        }
+                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
+                                        <td>@health.Student.Name</td>
+
+                                        @if (health.IsEmptyData)
+                                        {
+                                            if (!ShowInfected)
+                                            {
+                                                <td colspan="14">
+                                                    未提出
                                                 </td>
-                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                             else
                                             {
-                                                <td>
-                                                    @if (health.IsWrongBodyTemperature())
-                                                    {<i class="attention icon"></i> }
-                                                    else if (health.IsWarnBodyTemperature())
-                                                    { <i class="exclamation triangle icon"></i>}
-                                                    @health.BodyTemperature
+                                                <td colspan="17">
+                                                    未提出
                                                 </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn1())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn1
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn2())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn2
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn3())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn3
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn4())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn4
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn5())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn5
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn6())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn6
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn7())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn7
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn8())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn8
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn9())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn9
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn10())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn10
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn11())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn11
-                                                </td>
-                                                <td>
-                                                    @if (health.IsWrongStringColumn12())
-                                                    {<i class="attention icon"></i>}
-                                                    @health.StringColumn12
-                                                </td>
-                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                         }
                                         else
                                         {
-                                            if (!health.IsInfected)
+                                            if (!ShowInfected)
                                             {
-                                                <td colspan="16">
-                                                    非感染
-                                                </td>
-                                                <td>@health.UploadedAt.ToString()</td>
+                                                if (health.IsInfected)
+                                                {
+                                                    <td colspan="13">
+                                                        <i class="attention icon"></i>感染中
+                                                    </td>
+                                                    <td>@health.UploadedAt.ToString()</td>
+                                                }
+                                                else
+                                                {
+                                                    <td>
+                                                        @if (health.IsWrongBodyTemperature())
+                                                        {<i class="attention icon"></i> }
+                                                        else if (health.IsWarnBodyTemperature())
+                                                        { <i class="exclamation triangle icon"></i>}
+                                                        @health.BodyTemperature
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn1())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn1
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn2())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn2
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn3())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn3
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn4())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn4
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn5())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn5
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn6())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn6
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn7())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn7
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn8())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn8
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn9())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn9
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn10())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn10
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn11())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn11
+                                                    </td>
+                                                    <td>
+                                                        @if (health.IsWrongStringColumn12())
+                                                        {<i class="attention icon"></i>}
+                                                        @health.StringColumn12
+                                                    </td>
+                                                    <td>@health.UploadedAt.ToString()</td>
+                                                }
                                             }
                                             else
                                             {
-                                                <td>@health.InfectedMeasuredTime1</td>
-                                                <td>@health.InfectedBodyTemperature1</td>
-                                                <td>@(health.InfectedOxygenSaturation1 < 0 ? "" : health.InfectedOxygenSaturation1.ToString())</td>
-                                                <td>@health.InfectedMeasuredTime2</td>
-                                                <td>@health.InfectedBodyTemperature2</td>
-                                                <td>@(health.InfectedOxygenSaturation2 < 0 ? "" : health.InfectedOxygenSaturation2.ToString())</td>
-                                                <td>@health.InfectedStringColumn1</td>
-                                                <td>@health.InfectedStringColumn2</td>
-                                                <td>@health.InfectedStringColumn3</td>
-                                                <td>@health.InfectedStringColumn4</td>
-                                                <td>@health.InfectedStringColumn5</td>
-                                                <td>@health.InfectedStringColumn6</td>
-                                                <td>@health.InfectedStringColumn7</td>
-                                                <td>@health.InfectedStringColumn8</td>
-                                                <td>@health.InfectedStringColumn9</td>
-                                                <td>@health.InfectedStringColumn10</td>
-                                                <td>@health.UploadedAt.ToString()</td>
+                                                if (!health.IsInfected)
+                                                {
+                                                    <td colspan="16">
+                                                        非感染
+                                                    </td>
+                                                    <td>@health.UploadedAt.ToString()</td>
+                                                }
+                                                else
+                                                {
+                                                    <td>@health.InfectedMeasuredTime1</td>
+                                                    <td>@health.InfectedBodyTemperature1</td>
+                                                    <td>@(health.InfectedOxygenSaturation1 < 0 ? "" : health.InfectedOxygenSaturation1.ToString())</td>
+                                                    <td>@health.InfectedMeasuredTime2</td>
+                                                    <td>@health.InfectedBodyTemperature2</td>
+                                                    <td>@(health.InfectedOxygenSaturation2 < 0 ? "" : health.InfectedOxygenSaturation2.ToString())</td>
+                                                    <td>@health.InfectedStringColumn1</td>
+                                                    <td>@health.InfectedStringColumn2</td>
+                                                    <td>@health.InfectedStringColumn3</td>
+                                                    <td>@health.InfectedStringColumn4</td>
+                                                    <td>@health.InfectedStringColumn5</td>
+                                                    <td>@health.InfectedStringColumn6</td>
+                                                    <td>@health.InfectedStringColumn7</td>
+                                                    <td>@health.InfectedStringColumn8</td>
+                                                    <td>@health.InfectedStringColumn9</td>
+                                                    <td>@health.InfectedStringColumn10</td>
+                                                    <td>@health.UploadedAt.ToString()</td>
+                                                }
                                             }
                                         }
-                                    }
 
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                    @if (HasPagination)
-                    {
-                        var previous = 0;
-                        <div class="ui center pagination menu bottom attached">
-                            @foreach (var i in pages)
-                            {
-                                if (previous + 1 != i)
-                                {
-                                    <div class="disabled item">...</div>
+                                    </tr>
                                 }
-                                if (i == PageNumber)
+                            </tbody>
+                        </table>
+                        @if (HasPagination)
+                        {
+                            var previous = 0;
+                            <div class="ui center pagination menu bottom attached">
+                                @foreach (var i in pages)
                                 {
-                                    <div class="active item">@i</div>
+                                    if (previous + 1 != i)
+                                    {
+                                        <div class="disabled item">...</div>
+                                    }
+                                    if (i == PageNumber)
+                                    {
+                                        <div class="active item">@i</div>
+                                    }
+                                    else
+                                    {
+                                        <a class="item" @onclick="async () => await GotoPageAsync(i)">@i</a>
+                                    }
+                                    previous = i;
                                 }
-                                else
-                                {
-                                    <a class="item" @onclick="async () => await  GotoPageAsync(i)">@i</a>
-                                }
-                                previous = i;
-                            }
-                        </div>
+                            </div>
+                        }
                     }
-                }
-                else
-                {
-                    <div class="ui segment bottom attached">
-                        <div class="ui negative message">
-                            <p>フィルタ式の構文エラーです:</p>
-                            <div class="ui message">
-                                <pre>@ErrorMessage</pre>
+                    else
+                    {
+                        <div class="ui segment bottom attached">
+                            <div class="ui negative message">
+                                <p>フィルタ式の構文エラーです:</p>
+                                <div class="ui message">
+                                    <pre>@ErrorMessage</pre>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                }
+                    }
 
+                </div>
             </div>
         }
-        </Authorized>
-    </AuthorizeView>
+    </Authorized>
+</AuthorizeView>
 
 
 
@@ -374,11 +399,11 @@
     protected bool Loaded = false;
     protected bool Allowed = false;
     protected bool Processing = false;
+    protected bool NewMailProcessing = false;
+    protected bool AllMailProcessing = false;
 
     protected string ErrorMessage;
     protected string MailMessage;
-    protected GetMailsComponent GetMailsComponent1;
-    protected GetMailsComponent GetMailsComponent2;
 
     protected override async Task OnInitializedAsync()
     {
@@ -398,7 +423,7 @@
     {
         Notifier.Notify -= OnNotify;
     }
-    public async Task UpdatePaginationAsync()
+    public void UpdatePagination()
     {
         var total = Count / EntriesPerPage + (Count % EntriesPerPage > 0 ? 1 : 0);
         var head = Enumerable.Range(1, 3);
@@ -406,16 +431,6 @@
         var tail = Enumerable.Range(total - 2, 3);
         HealthList = HealthQuery.Skip(EntriesPerPage * (PageNumber - 1)).Take(EntriesPerPage).AsEnumerable();
         pages = head.Concat(around).Concat(tail).OrderBy(x => x).Where(x => x > 0 && x <= total).Distinct();
-    }
-
-    protected async Task GotoPageAsync(int i)
-    {
-        Processing = true;
-        await InvokeAsync(() => StateHasChanged());
-        PageNumber = i;;
-        await UpdatePaginationAsync();
-        Processing = false;
-        await InvokeAsync(() => StateHasChanged());
     }
 
     protected async Task Update()
@@ -434,15 +449,7 @@
             }
         }
 
-        if(!string.IsNullOrWhiteSpace(GetMailsComponent1?.MailMessage))
-        {
-            MailMessage = GetMailsComponent1.MailMessage;
-        }
-        else if(!string.IsNullOrWhiteSpace(GetMailsComponent2?.MailMessage))
-        {
-            MailMessage = GetMailsComponent2.MailMessage;
-        }
-        else
+        if (!string.IsNullOrWhiteSpace(MailMessage))
         {
             var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == id).OrderBy(x => x.OperatedAt).LastOrDefault();
             if (lastHistroy == null)
@@ -459,7 +466,7 @@
     protected string GetCsvFileUrl(string filterString)
     {
         string str = HttpUtility.UrlEncode(filterString);
-        @if(!ShowInfected)
+        @if (!ShowInfected)
         {
             return $"course/{Course.Id}/report.csv?filterString={str}";
         }
@@ -606,22 +613,131 @@
 
     protected async Task FilterAsync(string filterString)
     {
-        Processing = true;
-        await InvokeAsync(() => StateHasChanged());
-        var ec = NCVC.Parser.QueryParser.HasError(filterString);
-        if(ec?.Value != null)
+        if (!Processing)
         {
-            ErrorMessage = ec.Value;
+            Processing = true;
+            StateHasChanged();
+
+            await Task.Run(async () =>
+            {
+                await InvokeAsync(() =>
+                {
+                    var ec = NCVC.Parser.QueryParser.HasError(filterString);
+                    if (ec?.Value != null)
+                    {
+                        ErrorMessage = ec.Value;
+                    }
+                    else
+                    {
+                        ErrorMessage = "";
+                        (Count, HealthQuery) = Health.Search(DB.Context, EV, Course.Id, filterString);
+                    }
+                    PageNumber = 1;
+                    UpdatePagination();
+                });
+            });
+
+            Processing = false;
+            StateHasChanged();
         }
-        else
-        {
-            ErrorMessage = "";
-            (Count, HealthQuery) = Health.Search(DB.Context, EV, Course.Id, filterString);
-            await GotoPageAsync(1);
-            await UpdatePaginationAsync();
-        }
-        Processing = false;
-        await InvokeAsync(() => StateHasChanged());
     }
 
+    protected async Task GotoPageAsync(int i)
+    {
+        if (!Processing)
+        {
+            Processing = true;
+            StateHasChanged();
+
+            await Task.Run(async () =>
+            {
+                await InvokeAsync(() =>
+                {
+                    PageNumber = i;
+                    UpdatePagination();
+                });
+            });
+
+            Processing = false;
+            StateHasChanged();
+        }
+    }
+
+
+    protected async Task CheckMailAsync(bool isAll)
+    {
+        if (!Processing)
+        {
+            Processing = true;
+            if(isAll)
+            {
+                AllMailProcessing = true;
+            }
+            else
+            {
+                NewMailProcessing = true;
+            }
+            StateHasChanged();
+
+            await Task.Run(async () =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await Task.Run(async () =>
+                    {
+                        var auth = await Auth.GetAuthenticationStateAsync();
+                        var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
+                        if (staff == null)
+                        {
+                            return;
+                        }
+
+                        try
+                        {
+                            int index, count, numOfNewData, numOfUpdated;
+                            if (isAll)
+                            {
+                                (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course);
+                            }
+                            else
+                            {
+                                var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.CourseId == Course.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
+                                if (lastHistroy == null)
+                                {
+                                    (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course);
+                                }
+                                else
+                                {
+                                    (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, Course, lastHistroy.LastIndex);
+                                }
+                            }
+                            if (count == 0)
+                            {
+                                MailMessage = "新着メールはありません．";
+                            }
+                            else
+                            {
+                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを受け取りました．";
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            MailMessage = e.Message;
+                        }
+                    });
+                });
+            });
+
+            Processing = false;
+            if(isAll)
+            {
+                AllMailProcessing = false;
+            }
+            else
+            {
+                NewMailProcessing = false;
+            }
+            StateHasChanged();
+        }
+    }
 }

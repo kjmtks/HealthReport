@@ -46,9 +46,9 @@ namespace NCVC.App.Models
 
             var sql_for_count  = buildSql(courseId, @"h.""Id""", timeframes, startDate, numOfDaysToSearch);
             var sql_for_search = buildSql(courseId, "*", timeframes, startDate, numOfDaysToSearch);
-            var count = context.HealthList.FromSqlRaw(sql_for_count).Count();
+            var count = context.HealthList.FromSqlRaw(sql_for_count).AsNoTracking().Count();
             // Console.WriteLine(sql_for_search);
-            return (count, Sort(context.HealthList.FromSqlRaw(sql_for_search).Include(x => x.Student)));
+            return (count, Sort(context.HealthList.FromSqlRaw(sql_for_search).Include(x => x.Student)).AsNoTracking());
         }
 
         private string buildSql(int courseId, string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
@@ -83,6 +83,8 @@ FROM
       {stc}
       t.regexp_split_to_table AS ""TimeFrame"",
       u.""Id"" AS ""StudentId"",
+      FALSE AS ""HasError"",
+      FALSE AS ""HasWarning"",
       0 AS ""InfectedBodyTemperature1"",
       0 AS ""InfectedBodyTemperature2"",
       '00:00:00' AS ""InfectedMeasuredTime1"",
@@ -131,6 +133,8 @@ FROM
       h.""MeasuredAt"" AS ""MeasuredAt"",
       h.""TimeFrame"" AS ""TimeFrame"",
       h.""StudentId"" AS ""StudentId"",
+      h.""HasError"" AS ""HasError"",
+      h.""HasWarning"" AS ""HasWarning"",
       h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
       h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
       h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
@@ -182,6 +186,7 @@ FROM
 ");
 
             var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x)})").ToList();
+            // var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
             {
                 conditions.Add(string.Format(@"(h.""MeasuredAt"" >= (date '{0:00}-{1:00}-{2:00}'))", startDate.Year, startDate.Month, startDate.Day));
@@ -369,298 +374,6 @@ FROM
             if (attr.IsUserId)
             {
                 return health?.Student?.Account ?? "";
-            }
-            throw new NotImplementedException();
-        }
-
-        //---
-
-        private static string toSqlStringAtom(QueryParser.StringAtom atom)
-        {
-            if (atom.IsTimeFrame)
-            {
-                return "h.\"TimeFrame\"";
-            }
-            if (atom.IsUserId)
-            {
-                return "h.\"Account\"";
-            }
-            if (atom.IsTag)
-            {
-                return "(' ' || h.\"Tags\" || ' ')";
-            }
-            if (atom is QueryParser.StringAtom.StringLiteral literal)
-            {
-                return $"'{literal.Item.Replace("'", "''")}'";
-            }
-            throw new NotImplementedException();
-        }
-        private static string toSqlStringExpr(QueryParser.StringExpr expr)
-        {
-            if (expr.Item is QueryParser.StringAtom atom)
-            {
-                return toSqlStringAtom(atom);
-            }
-            throw new NotImplementedException();
-        }
-
-
-        private static string toSqlDecimalAtom(QueryParser.DecimalAtom atom)
-        {
-            if (atom.IsBodyTemperature)
-            {
-                return "h.\"BodyTemperature\"";
-            }
-            if (atom is QueryParser.DecimalAtom.DecimalLiteral literal)
-            {
-                return $"{literal.Item}";
-            }
-            throw new NotImplementedException();
-        }
-        private static string toSqlDecimalExpr(QueryParser.DecimalExpr expr)
-        {
-            if (expr is QueryParser.DecimalExpr.DecimalAtom atom)
-            {
-                return $"{toSqlDecimalAtom(atom.Item)}";
-            }
-            if (expr is QueryParser.DecimalExpr.Sum sum)
-            {
-                return $"({toSqlDecimalExpr(sum.Item1)} + {toSqlDecimalExpr(sum.Item2)})";
-            }
-            if (expr is QueryParser.DecimalExpr.Sub sub)
-            {
-                return $"({toSqlDecimalExpr(sub.Item1)} - {toSqlDecimalExpr(sub.Item2)})";
-            }
-            if (expr is QueryParser.DecimalExpr.Mul mul)
-            {
-                return $"({toSqlDecimalExpr(mul.Item1)} * {toSqlDecimalExpr(mul.Item2)})";
-            }
-            if (expr is QueryParser.DecimalExpr.Div div)
-            {
-                return $"({toSqlDecimalExpr(div.Item1)} / {toSqlDecimalExpr(div.Item2)})";
-            }
-            if (expr is QueryParser.DecimalExpr.Minus minus)
-            {
-                return $"(-{ toSqlDecimalExpr(minus.Item)})";
-            }
-            throw new NotImplementedException();
-        }
-
-
-        private static (string, DateTimeSpan) toSqlDateAtom(QueryParser.DateAtom atom)
-        {
-            if (atom.IsMeasuredDate)
-            {
-                return ("h.\"MeasuredAt\"", DateTimeSpan.Days);
-            }
-            if (atom is QueryParser.DateAtom.DateLiteral literal)
-            {
-                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", literal.Item1, literal.Item2,literal.Item3), DateTimeSpan.Days);
-            }
-            if (atom.IsToday)
-            {
-                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day), DateTimeSpan.Days);
-            }
-            if (atom.IsThisWeek)
-            {
-                var today = DateTime.Today;
-                int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
-                var start = today.AddDays(-1 * diff).Date;
-                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Days);
-            }
-            if (atom.IsThisMonth)
-            {
-                var today = DateTime.Today;
-                var start = new DateTime(today.Year, today.Month, 1);
-                return (string.Format("(date '{0:0000}-{1:00}-{2:00} 00:00:00+09')", start.Year, start.Month, start.Day), DateTimeSpan.Months);
-            }
-            throw new NotImplementedException();
-        }
-        private static (string, DateTimeSpan) toSqlDateExpr(QueryParser.DateExpr expr)
-        {
-            if (expr is QueryParser.DateExpr.DateAtom atom)
-            {
-                return toSqlDateAtom(atom.Item);
-            }
-            if (expr is QueryParser.DateExpr.AddDate add)
-            {
-                var inc = toSqlDecimalExpr(add.Item2);
-                var date = toSqlDateExpr(add.Item1);
-                switch (date.Item2)
-                {
-                    case DateTimeSpan.Days:
-                        return ($"({date.Item1} + (interval '{inc} day'))", DateTimeSpan.Days);
-                    case DateTimeSpan.Months:
-                        return ($"({date.Item1} + (interval '{inc} month'))", DateTimeSpan.Months);
-                }
-            }
-            if (expr is QueryParser.DateExpr.ReduceDate red)
-            {
-                var dec = toSqlDecimalExpr(red.Item2);
-                var date = toSqlDateExpr(red.Item1);
-                switch (date.Item2)
-                {
-                    case DateTimeSpan.Days:
-                        return ($"({date.Item1} - (interval '{dec} day'))", DateTimeSpan.Days);
-                    case DateTimeSpan.Months:
-                        return ($"({date.Item1} - (interval '{dec} month'))", DateTimeSpan.Months);
-                }
-            }
-            throw new NotImplementedException();
-        }
-
-
-        private static string toSqlBooleanAtom(QueryParser.BooleanAtom atom)
-        {
-            if (atom.IsHasError)
-            {
-                return @"(h.""BodyTemperature"" >= 37.5
-OR (h.""StringColumn1"" <> '無' AND h.""StringColumn1"" <> 'N')
-OR (h.""StringColumn2"" <> '無' AND h.""StringColumn2"" <> 'N')
-OR (h.""StringColumn3"" <> '無' AND h.""StringColumn3"" <> 'N')
-OR (h.""StringColumn4"" <> '無' AND h.""StringColumn4"" <> 'N')
-OR (h.""StringColumn5"" <> '無' AND h.""StringColumn5"" <> 'N')
-OR (h.""StringColumn6"" <> '無' AND h.""StringColumn6"" <> 'N')
-OR (h.""StringColumn7"" <> '無' AND h.""StringColumn7"" <> 'N')
-OR (h.""StringColumn8"" <> '無' AND h.""StringColumn8"" <> 'N')
-OR (h.""StringColumn9"" <> '' OR h.""StringColumn9"" IS NULL)
-OR (h.""StringColumn10"" <> '無' AND h.""StringColumn10"" <> 'N')
-OR (h.""StringColumn11"" <> '無' AND h.""StringColumn11"" <> 'N')
-OR (h.""StringColumn12"" <> '' OR h.""StringColumn12"" IS NULL) )";
-            }
-            if (atom.IsHasWarning)
-            {
-                return "(h.\"BodyTemperature\" >= 37.0)";
-            }
-            if (atom.IsIsSubmitted)
-            {
-                return "(NOT h.\"IsEmptyData\")";
-            }
-            if (atom.IsIsInfected)
-            {
-                return "h.\"IsInfected\"";
-            }
-            if (atom.IsTrue)
-            {
-                return "TRUE";
-            }
-            if (atom.IsFalse)
-            {
-                return "FALSE";
-            }
-
-            if (atom is QueryParser.BooleanAtom.SEq seq)
-            {
-                var lhs = toSqlStringExpr(seq.Item1);
-                var rhs = toSqlStringExpr(seq.Item2);
-                return $"({lhs} = {rhs})";
-            }
-
-            if (atom is QueryParser.BooleanAtom.SStartWith ssw)
-            {
-                var lhs = toSqlStringExpr(ssw.Item1);
-                var rhs = toSqlStringExpr(ssw.Item2);
-                return $"({lhs} LIKE '{rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}%' AND {lhs} IS NOT NULL)";
-            }
-            if (atom is QueryParser.BooleanAtom.SEndWith sew)
-            {
-                var lhs = toSqlStringExpr(sew.Item1);
-                var rhs = toSqlStringExpr(sew.Item2);
-                return $"({lhs} LIKE '%{rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")}' AND {lhs} IS NOT NULL)";
-            }
-            if (atom is QueryParser.BooleanAtom.SHas shs)
-            {
-                var lhs = toSqlStringExpr(shs.Item1);
-                var rhs = toSqlStringExpr(shs.Item2);
-                return $"({lhs} LIKE '% {rhs.Trim('\'').Replace("'", "''").Replace("_", "\\_").Replace("%", "\\%")} %' AND {lhs} IS NOT NULL)";
-            }
-
-            if (atom is QueryParser.BooleanAtom.SNe sne)
-            {
-                return $"(NOT {toSqlBooleanAtom(QueryParser.BooleanAtom.NewSEq(sne.Item1, sne.Item2))})";
-            }
-
-            if (atom is QueryParser.BooleanAtom.DeEq deeq)
-            {
-                return $"({toSqlDecimalExpr(deeq.Item1)} = {toSqlDecimalExpr(deeq.Item2)})";
-            }
-            if (atom is QueryParser.BooleanAtom.DeNe dene)
-            {
-                return $"({toSqlDecimalExpr(dene.Item1)} <> {toSqlDecimalExpr(dene.Item2)})";
-            }
-            if (atom is QueryParser.BooleanAtom.DeGt degt)
-            {
-                return $"({toSqlDecimalExpr(degt.Item1)} > {toSqlDecimalExpr(degt.Item2)})";
-            }
-            if (atom is QueryParser.BooleanAtom.DeGe dege)
-            {
-                return $"({toSqlDecimalExpr(dege.Item1)} >= {toSqlDecimalExpr(dege.Item2)})";
-            }
-            if (atom is QueryParser.BooleanAtom.DeLt delt)
-            {
-                return $"({toSqlDecimalExpr(delt.Item1)} < {toSqlDecimalExpr(delt.Item2)})";
-            }
-            if (atom is QueryParser.BooleanAtom.DeLe dele)
-            {
-                return $"({toSqlDecimalExpr(dele.Item1)} <= {toSqlDecimalExpr(dele.Item2)})";
-            }
-
-            if (atom is QueryParser.BooleanAtom.DtEq dteq)
-            {
-                return $"({toSqlDateExpr(dteq.Item1).Item1} = {toSqlDateExpr(dteq.Item2).Item1})";
-            }
-            if (atom is QueryParser.BooleanAtom.DtNe dtne)
-            {
-                return $"({toSqlDateExpr(dtne.Item1).Item1} <> {toSqlDateExpr(dtne.Item2).Item1})";
-            }
-            if (atom is QueryParser.BooleanAtom.DtGt dtgt)
-            {
-                return $"({toSqlDateExpr(dtgt.Item1).Item1} > {toSqlDateExpr(dtgt.Item2).Item1})";
-            }
-            if (atom is QueryParser.BooleanAtom.DtGe dtge)
-            {
-                return $"({toSqlDateExpr(dtge.Item1).Item1} >= {toSqlDateExpr(dtge.Item2).Item1})";
-            }
-            if (atom is QueryParser.BooleanAtom.DtLt dtlt)
-            {
-                return $"({toSqlDateExpr(dtlt.Item1).Item1} < {toSqlDateExpr(dtlt.Item2).Item1})";
-            }
-            if (atom is QueryParser.BooleanAtom.DtLe dtle)
-            {
-                return $"({toSqlDateExpr(dtle.Item1).Item1} <= {toSqlDateExpr(dtle.Item2).Item1})";
-            }
-
-            throw new NotImplementedException();
-        }
-        private static string toSqlBooleanExpr(QueryParser.BooleanExpr expr)
-        {
-            if (expr is QueryParser.BooleanExpr.BooleanAtom atom)
-            {
-                return $"({toSqlBooleanAtom(atom.Item)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Eq eq)
-            {
-                return $"({toSqlBooleanExpr(eq.Item1)} == {toSqlBooleanExpr(eq.Item2)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Ne ne)
-            {
-                return $"({toSqlBooleanExpr(ne.Item1)} != {toSqlBooleanExpr(ne.Item2)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Neg neg)
-            {
-                return $"(NOT {toSqlBooleanExpr(neg.Item)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Conj conj)
-            {
-                return $"({toSqlBooleanExpr(conj.Item1)} AND {toSqlBooleanExpr(conj.Item2)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Disj disj)
-            {
-                return $"({toSqlBooleanExpr(disj.Item1)} OR {toSqlBooleanExpr(disj.Item2)})";
-            }
-            if (expr is QueryParser.BooleanExpr.Impl impl)
-            {
-                return $"(NOT {toSqlBooleanExpr(impl.Item1)} || {toSqlBooleanExpr(impl.Item2)})";
             }
             throw new NotImplementedException();
         }

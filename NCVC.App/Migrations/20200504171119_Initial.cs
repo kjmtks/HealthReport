@@ -163,7 +163,9 @@ namespace NCVC.App.Migrations
                     InfectedStringColumn10 = table.Column<string>(nullable: true),
                     MailIndex = table.Column<int>(nullable: false),
                     StudentId = table.Column<int>(nullable: false),
-                    IsEmptyData = table.Column<bool>(nullable: false)
+                    IsEmptyData = table.Column<bool>(nullable: false),
+                    HasError = table.Column<bool>(nullable: false),
+                    HasWarning = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {

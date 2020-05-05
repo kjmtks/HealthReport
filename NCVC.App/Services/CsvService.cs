@@ -93,13 +93,13 @@ namespace NCVC.App.Services
 
                                         if (flg && num % 1000 == 0)
                                         {
-                                            Context.SaveChanges();
+                                            await Context.SaveChangesAsync();
                                             Console.WriteLine($"Reading health data from #'{msg.Index}': {num}");
                                         }
                                     }
                                 }
                             }
-                            Context.SaveChanges();
+                            await Context.SaveChangesAsync();
                             Console.WriteLine($"Finishing reading health data from #'{msg.Index}'");
                         }
                     }
@@ -163,10 +163,11 @@ namespace NCVC.App.Services
                     UploadedAt = received_at,
                     Student = student,
                     MailIndex = msg_index,
-                    IsInfected = isInfected
+                    IsInfected = isInfected,
+                    IsEmptyData = false
                 };
             }
-            else if (canOverride || health.IsEmptyData)
+            else if (canOverride)
             {
                 health.RawUserId = hash;
                 health.RawUserName = name;
@@ -175,6 +176,7 @@ namespace NCVC.App.Services
                 health.Student = student;
                 health.MailIndex = msg_index;
                 health.IsInfected = isInfected;
+                health.IsEmptyData = false;
             }
             if(health == null)
             {
@@ -201,6 +203,8 @@ namespace NCVC.App.Services
                 health.StringColumn10 = row[13].Trim();
                 health.StringColumn11 = row[14].Trim();
                 health.StringColumn12 = row[15].Trim();
+                health.HasError = health.HasWrongValue();
+                health.HasWarning = health.HasWarnValue();
             }
             else
             {

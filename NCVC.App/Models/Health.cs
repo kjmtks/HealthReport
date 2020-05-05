@@ -65,6 +65,8 @@ namespace NCVC.App.Models
 
         public bool IsEmptyData { get; set; } = false;
 
+        public bool HasError { get; set; } = false;
+        public bool HasWarning { get; set; } = false;
 
         public bool IsWrongBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37.5;
         public bool IsWarnBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37;

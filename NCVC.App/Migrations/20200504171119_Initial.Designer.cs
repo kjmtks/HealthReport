@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace NCVC.App.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20200504085305_Initial")]
+    [Migration("20200504171119_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,6 +105,12 @@ namespace NCVC.App.Migrations
 
                     b.Property<decimal>("BodyTemperature")
                         .HasColumnType("numeric");
+
+                    b.Property<bool>("HasError")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasWarning")
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("InfectedBodyTemperature1")
                         .HasColumnType("numeric");

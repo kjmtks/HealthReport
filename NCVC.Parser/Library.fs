@@ -285,20 +285,8 @@ module QueryParser =
             | BooleanAtom.False -> "FALSE"
             | BooleanAtom.IsInfected -> @"h.""IsInfected"""
             | BooleanAtom.IsSubmitted -> @"(NOT h.""IsEmptyData"")"
-            | BooleanAtom.HasError -> @"(h.""BodyTemperature"" >= 37.5
-OR (h.""StringColumn1"" <> '無' AND h.""StringColumn1"" <> 'N')
-OR (h.""StringColumn2"" <> '無' AND h.""StringColumn2"" <> 'N')
-OR (h.""StringColumn3"" <> '無' AND h.""StringColumn3"" <> 'N')
-OR (h.""StringColumn4"" <> '無' AND h.""StringColumn4"" <> 'N')
-OR (h.""StringColumn5"" <> '無' AND h.""StringColumn5"" <> 'N')
-OR (h.""StringColumn6"" <> '無' AND h.""StringColumn6"" <> 'N')
-OR (h.""StringColumn7"" <> '無' AND h.""StringColumn7"" <> 'N')
-OR (h.""StringColumn8"" <> '無' AND h.""StringColumn8"" <> 'N')
-OR (h.""StringColumn9"" <> '' OR h.""StringColumn9"" IS NULL)
-OR (h.""StringColumn10"" <> '無' AND h.""StringColumn10"" <> 'N')
-OR (h.""StringColumn11"" <> '無' AND h.""StringColumn11"" <> 'N')
-OR (h.""StringColumn12"" <> '' OR h.""StringColumn12"" IS NULL) )"
-            | BooleanAtom.HasWarning -> @"(h.""BodyTemperature"" >= 37.0)"
+            | BooleanAtom.HasError -> @"h.""HasError"""
+            | BooleanAtom.HasWarning -> @"h.""HasWarning"""
             | BooleanAtom.SEq (lhs, rhs) -> sprintf "(%s = %s)" (_stringExpr lhs) (_stringExpr rhs)
             | BooleanAtom.SNe (lhs, rhs) -> sprintf "(%s <> %s)" (_stringExpr lhs) (_stringExpr rhs)
             | BooleanAtom.SStartWith (lhs, rhs) ->

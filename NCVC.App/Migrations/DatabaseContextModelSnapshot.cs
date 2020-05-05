@@ -104,6 +104,12 @@ namespace NCVC.App.Migrations
                     b.Property<decimal>("BodyTemperature")
                         .HasColumnType("numeric");
 
+                    b.Property<bool>("HasError")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasWarning")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("InfectedBodyTemperature1")
                         .HasColumnType("numeric");
 
