@@ -253,26 +253,26 @@ Google Forms などを使用して収集したデータを一括登録するこ�
 構文の詳細は以下の通りです:
 
 ```
-StringExpr ::= <string>
-             | "user" | "timeframe" | "tag"
+<StringExpr> ::= <string>
+               | "user" | "timeframe" | "tag"
 
-DecimalExpr ::= <decimal>
-              | "temp"
-              | "-" <DecimalExpr>
-              | <DecimalExpr> ("+" | "-" | "*" | "\") <DecimalExpr>
+<DecimalExpr> ::= <decimal>
+                | "temp"
+                | "-" <DecimalExpr>
+                | <DecimalExpr> ("+" | "-" | "*" | "\") <DecimalExpr>
 
-DateExpr ::= <date>
-           | "date" | "today" | "thisweek" | "thismonth"
-           | <DateExpr> ("+" | "-") <DecimalExpr> | <DecimalExpr> ("+" | "-") <DateExpr>
+<DateExpr> ::= <date>
+             | "date" | "today" | "thisweek" | "thismonth"
+             | <DateExpr> ("+" | "-") <DecimalExpr> | <DecimalExpr> ("+" | "-") <DateExpr>
 
-BooleanExpr ::= "true" | "false"
-              | "error" | "warning" | "submitted" | "infected"
-              | <StringExpr> ("==" | "!=") <StringExpr>
-              | <DecimalExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DecimalExpr>
-              | <DateExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DateExpr>
-              | <BooleanExpr> ("==" | "!=") <BooleanExpr>
-              | "!" <BooleanExpr>
-              | <BooleanExpr> ("&&" | "||" | "->") <BooleanExpr>
+<BooleanExpr> ::= "true" | "false"
+                | "error" | "warning" | "submitted" | "infected"
+                | <StringExpr> ("==" | "!=" | "*=" | "=*" | "->") <StringExpr>
+                | <DecimalExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DecimalExpr>
+                | <DateExpr> ("==" | "!=" | ">" | ">=" | "<" | "<=") <DateExpr>
+                | <BooleanExpr> ("==" | "!=") <BooleanExpr>
+                | "!" <BooleanExpr>
+                | <BooleanExpr> ("&&" | "||" | "->") <BooleanExpr>
 ```
 
 `/` 記号は年月日リテラルで使用される記号であるため， `<DecimalExpr>` 同士の割り算には `\` を割り当てていることに注意．
