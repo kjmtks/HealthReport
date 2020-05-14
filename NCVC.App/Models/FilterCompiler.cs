@@ -43,7 +43,10 @@ namespace NCVC.App.Models
             {
                 return (0, null);
             }
-
+            if(timeframes == null)
+            {
+                timeframes = new TimeFrame[] { };
+            }
             var sql_for_count  = buildSql(courseId, @"h.""Id""", timeframes, startDate, numOfDaysToSearch);
             var sql_for_search = buildSql(courseId, "*", timeframes, startDate, numOfDaysToSearch);
             var count = context.HealthList.FromSqlRaw(sql_for_count).AsNoTracking().Count();
