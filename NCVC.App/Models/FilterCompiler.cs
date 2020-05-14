@@ -43,7 +43,7 @@ namespace NCVC.App.Models
             {
                 return (0, null);
             }
-            if(timeframes == null)
+            if(timeframes == null || timeframes.Count() < 2)
             {
                 timeframes = new TimeFrame[] { };
             }
