@@ -15,6 +15,7 @@ COPY NCVC.Parser/*.fsproj ./NCVC.Parser/
 RUN mkdir -p /data && rm -rf ./NCVC.App/wwwroot/css/themes
 
 COPY NCVC.App/. ./NCVC.App/
+COPY NCVC.Parser/. ./NCVC.Parser/
 WORKDIR /app/NCVC.App
 RUN npm install
 RUN dotnet restore
