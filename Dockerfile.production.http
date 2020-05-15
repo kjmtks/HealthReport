@@ -11,6 +11,7 @@ RUN apt-get update -y && apt-get upgrade -yq && apt-get install -y curl git gnup
 
 COPY *.sln .
 COPY NCVC.App/*.csproj ./NCVC.App/
+COPY NCVC.Parser/*.fsproj ./NCVC.Parser/
 RUN mkdir -p /data && rm -rf ./NCVC.App/wwwroot/css/themes
 
 COPY NCVC.App/. ./NCVC.App/
