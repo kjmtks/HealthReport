@@ -29,14 +29,17 @@
                     </div>
 
                     <div class="ui borderless menu top attached">
-                        @if (!ShowInfected)
+                        @if (Course.ShowInfectedData)
                         {
-                            <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
+                            if (!ShowInfected)
+                            {
+                                <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
 
-                        }
-                        else
-                        {
-                            <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
+                            }
+                            else
+                            {
+                                <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
+                            }
                         }
 
                         <div data-tooltip="結果をCSV形式でダウンロード">
@@ -70,7 +73,7 @@
                                         </i>
                                     }
                                     else
-                                    { 
+                                    {
                                         <i class="icons" @onclick="async () => { await CheckMailAsync(true); }">
                                             <i class="sync alternate icon"></i>
                                             <i class="inverted corner add icon"></i>

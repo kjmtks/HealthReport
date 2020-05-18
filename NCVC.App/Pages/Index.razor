@@ -25,6 +25,7 @@
 </AuthorizeView>
 
 <AuthorizeView Roles="Admin">
+    <MailBoxManager CssClass="ui content" Collection="DB.Context.MailBoxes" />
     <StaffManager CssClass="ui content" Collection="DB.Context.Staffs" />
     <StudentsManager CssClass="ui content" />
 </AuthorizeView>

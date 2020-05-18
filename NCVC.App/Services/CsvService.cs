@@ -26,22 +26,22 @@ namespace NCVC.App.Services
         public async Task<(int, int, int, int)> PullCsv(Staff staff, Course course, int? index = null)
         {
             int count = 0;
-            int lastIndex = index.HasValue ? index.Value : course.ImapMailIndexOffset;
+            int lastIndex = index.HasValue ? index.Value : course.MailBox.ImapMailIndexOffset;
             var addHealthDateResults = new List<AddHealthDateResult>();
 
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 client.AuthenticationMechanisms.Remove("XOAUTH2");
-                var secureSocketOption = course.SecurityMode switch
+                var secureSocketOption = course.MailBox.SecurityMode switch
                 {
                     "ssl" => SecureSocketOptions.SslOnConnect,
                     "tls" => SecureSocketOptions.StartTls,
                     "none" => SecureSocketOptions.None,
                     _ => SecureSocketOptions.Auto,
                 };
-                client.Connect(course.ImapHost, course.ImapPort, secureSocketOption);
-                client.Authenticate(course.ImapMailUserAccount, course.ImapMailUserPassword);
+                client.Connect(course.MailBox.ImapHost, course.MailBox.ImapPort, secureSocketOption);
+                client.Authenticate(course.MailBox.ImapMailUserAccount, course.MailBox.ImapMailUserPassword);
 
                 var inbox = client.Inbox;
                 inbox.Open(FolderAccess.ReadOnly);

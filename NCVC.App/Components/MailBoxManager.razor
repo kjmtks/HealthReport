@@ -5,16 +5,14 @@
 @inject IJSRuntime JS;
 @inject DatabaseService DB;
 @inject IConfiguration Config;
-@inject NotifierService Notifier;
 @inject EnvironmentVariableService EV;
-@implements IDisposable;
 
 
 <div class="@CssClass">
     <h2 class="ui header">
-        <i class="list icon"></i>
+        <i class="mail icon"></i>
         <div class="content">
-            グループ
+            メールボックス
         </div>
     </h2>
     <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
@@ -23,41 +21,28 @@
         <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
             <div class="ui text loader">Please wait...</div>
         </div>
-        @if (IsAdmin)
-        {
-            <div class="ui menu top attached">
-                <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
-            </div>
-        }
+        <div class="ui menu top attached">
+            <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
+        </div>
         <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
             <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
                 <thead>
                     <tr>
                         <th class="single line">名前</th>
-                        <th class="single line">受付メールボックス名</th>
-                        <th class="single line">受付メールアドレス</th>
-                        <th class="single line">観察対象者数</th>
-                        @if (IsAdmin)
-                        {
-                            <th class="single line"></th>
-                        }
+                        <th class="single line">メールアドレス</th>
+                        <th class="single line"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var model in Pagination.ShowedModels)
                     {
                         <tr>
-                            <td><a href="course/@model.Id">@model.Name</a></td>
-                            <td>@model?.MailBox?.Name</td>
-                            <td>@model?.MailBox?.EmailAddress</td>
-                            <td>@model.StudentAssignments.Count()</td>
-                            @if (IsAdmin)
-                            {
-                                <td class="right aligned">
-                                    <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
-                                    <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
-                                </td>
-                            }
+                            <td>@model.Name</td>
+                            <td>@model.EmailAddress</td>
+                            <td class="right aligned">
+                                <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
+                                <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -80,58 +65,59 @@
                         <ValidationMessage For="@(() => EdittingModel.Name)" />
                     </div>
                     <div class="field">
-                        <label>収集開始年月日</label>
-                        <InputDate @bind-Value="@EdittingModel.StartDate" />
-                        <ValidationMessage For="@(() => EdittingModel.StartDate)" />
+                        <label>メールアドレス</label>
+                        <InputText @bind-Value="@EdittingModel.EmailAddress" />
+                        <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
                     </div>
                     <div class="field">
-                        <label>検索期間（当日からの日数）</label>
-                        <InputNumber @bind-Value="@EdittingModel.NumOfDaysToSearch" />
-                        <ValidationMessage For="@(() => EdittingModel.NumOfDaysToSearch)" />
+                        <label>IMAP ホスト</label>
+                        <InputText @bind-Value="@EdittingModel.ImapHost" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
                     </div>
                     <div class="field">
-                        <label>メールボックス</label>
-                        <select class="ui fluid dropdown" @bind="mailBoxId">
-                            @foreach (var mb in DB.Context.MailBoxes)
+                        <label>IMAP ポート</label>
+                        <InputNumber @bind-Value="@EdittingModel.ImapPort" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                    </div>
+                    <div class="field">
+                        <label>IMAP暗号化方式</label>
+                        <select class="ui fluid dropdown" @bind="securityMode">
+                            @if (EdittingModel.SecurityMode == "auto")
                             {
-                                @if (mailBoxId == mb.Id)
-                                {
-                                    <option value="@mb.Id" selected>@mb.Name (@mb.EmailAddress)</option>
-                                }
-                                else
-                                {
-                                    <option value="@mb.Id">@mb.Name (@mb.EmailAddress)</option>
-                                }
+                                <option value="auto" selected>auto</option>
+                            }
+                            else
+                            {
+                                <option value="auto">auto</option>
+                            }
+                            @if (EdittingModel.SecurityMode == "ssl")
+                            {
+                                <option value="ssl" selected>ssl</option>
+                            }
+                            else
+                            {
+                                <option value="ssl">ssl</option>
+                            }
+                            @if (EdittingModel.SecurityMode == "none")
+                            {
+                                <option value="none" selected>none</option>
+                            }
+                            else
+                            {
+                                <option value="none">none</option>
                             }
                         </select>
-                        <ValidationMessage For="@(() => EdittingModel.MailBoxId)" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
                     </div>
                     <div class="field">
-                        <label>スタッフリスト</label>
-                        このコースに所属させるスタッフのアカウントを半角スペースまたは改行区切りで記述してください.
-                        <InputTextArea @bind-Value="@EdittingModel.StaffAccounts" />
-                        <ValidationMessage For="@(() => EdittingModel.StaffAccounts)" />
+                        <label>IMAP アカウント</label>
+                        <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
                     </div>
                     <div class="field">
-                        <label>所属観察対象者リスト</label>
-                        このグループに所属させる観察対象者のアカウントを半角スペースまたは改行区切りで記述してください.
-                        <InputTextArea @bind-Value="@EdittingModel.StudentAccounts" />
-                        <ValidationMessage For="@(() => EdittingModel.StudentAccounts)" />
-                    </div>
-                    <div class="field">
-                        <label>初期フィルタ</label>
-                        <InputText @bind-Value="@EdittingModel.InitialFilter" />
-                        <ValidationMessage For="@(() => EdittingModel.InitialFilter)" />
-                    </div>
-                    <div class="field">
-                        <label>フィルタボタン</label>
-                        <InputTextArea @bind-Value="@EdittingModel.FilterButtons" />
-                        <ValidationMessage For="@(() => EdittingModel.FilterButtons)" />
-                    </div>
-                    <div class="field">
-                        <label>感染者情報も扱う</label>
-                        <InputCheckbox @bind-Value="@EdittingModel.ShowInfectedData" />
-                        <ValidationMessage For="@(() => EdittingModel.ShowInfectedData)" />
+                        <label>IMAP パスワード</label>
+                        <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
+                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
                     </div>
                     <div class="content">
                         <div class="actions">
@@ -153,95 +139,53 @@
     [Parameter]
     public string CssClass { get; set; }
 
-    public IEnumerable<Course> Collection { get; set; } = new Course[] { };
+    [Parameter]
+    public IEnumerable<MailBox> Collection { get; set; } = new MailBox[] { };
 
     protected int ComponentId;
     protected bool Processing { get; set; }
     protected string ErrorMessage { get; set; }
     protected string ErrorSubject { get; set; }
-    protected int mailBoxId;
+    protected string securityMode;
 
-    protected Paginated<Course> Pagination;
+    protected Paginated<MailBox> Pagination;
 
-    [Parameter]
-    public bool IsAdmin { get; set; }
-
-    protected override async Task OnInitializedAsync()
-    {
-        Notifier.Notify += OnNotify;
-        await Update();
-    }
-    protected async Task Update()
-    {
-        var auth = await Auth.GetAuthenticationStateAsync();
-        var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-        Collection = DB.Context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).OrderBy(x => x.Name).ToArray().Where(x => IsAdmin || isTestMode || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name)) ?? new Course[] { };
-    }
-    public async Task OnNotify()
-    {
-        await Update();
-        await InvokeAsync(StateHasChanged);
-    }
-    public void Dispose()
-    {
-        Notifier.Notify -= OnNotify;
-    }
-
-
-
-    protected Course EdittingModel { get; set; } = new Course();
+    protected MailBox EdittingModel { get; set; } = new MailBox();
     private ValidationMessageStore messageStore;
     protected EditContext EditContext { get; set; }
     protected EditMode Mode { get; set; } = EditMode.CreateNew;
-    protected Course BeforeModel = null;
+    protected MailBox BeforeModel = null;
     protected enum EditMode { CreateNew, Edit }
 
 
-    public CourseManager()
+    public MailBoxManager()
     {
         ComponentId = new Random().Next();
         ResetEdittingModel();
     }
     protected async Task OpenCreate()
     {
-        EdittingModel = new Course();
-        var sb = new System.Text.StringBuilder();
-        sb.AppendLine(@"異常あり: error
-体温37.0℃以上: temp >= 37.0
-体温37.5℃以上: temp >= 37.5
-直近4日: date > today - 4 && date <= today
-昨日: date == today - 1
-今日: date == today
-先週: date >= thisweek - 7 && date < thisweek
-今週: date >= thisweek && date < thisweek + 7
-先月: date >= thismonth - 1 && date < thismonth
-今月: date >= thismonth && date < thismonth + 1
-要注目: tag -> ""要注目""
-未提出: !submitted
-提出済: submitted");
-        EdittingModel.FilterButtons = sb.ToString();
-
+        EdittingModel = new MailBox();
         Mode = EditMode.CreateNew;
         ResetEdittingModel();
         await OpenEditDialog();
     }
-    protected async Task OpenEdit(Course beforeModel)
+    protected async Task OpenEdit(MailBox beforeModel)
     {
         BeforeModel = beforeModel;
         EdittingModel = beforeModel.GetEntityForEditOrRemove(DB.Context, Config);
-        EdittingModel.StudentAccounts = string.Join(" ", EdittingModel.StudentAssignments.Select(x => x.Student.Account));
         if (EdittingModel == null)
         {
             ErrorSubject = "Error";
             ErrorMessage = "Not found the entity";
             return;
         }
-        mailBoxId = EdittingModel.MailBoxId;
+        securityMode = EdittingModel.SecurityMode;
         Mode = EditMode.Edit;
         ResetEdittingModel(EdittingModel);
         await OpenEditDialog();
     }
-    protected async Task RemoveAsync(Course model)
+    protected async Task RemoveAsync(MailBox model)
     {
         if (model == null) { return; }
         var m = model.GetEntityForEditOrRemove(DB.Context, Config);
@@ -263,7 +207,6 @@
         DB.Context.SaveChanges();
 
         await InvokeAsync(() => StateHasChanged());
-        await InvokeAsync(() => Notifier.Update());
     }
     protected virtual async Task OnValidAsync(EditContext editContext)
     {
@@ -276,7 +219,7 @@
             {
                 try
                 {
-                    EdittingModel.MailBoxId = mailBoxId;
+                    EdittingModel.SecurityMode = securityMode;
                     EdittingModel.CreateNew(DB.Context, Config);
                 }
                 catch (Exception e)
@@ -291,7 +234,7 @@
                 var previous = EdittingModel.GetEntityAsNoTracking(DB.Context, Config);
                 try
                 {
-                    EdittingModel.MailBoxId = mailBoxId;
+                    EdittingModel.SecurityMode = securityMode;
                     EdittingModel.Update(DB.Context, Config, previous);
                 }
                 catch (Exception e)
@@ -302,7 +245,6 @@
                 DB.Context.SaveChanges();
             }
             await InvokeAsync(() => StateHasChanged());
-            await InvokeAsync(() => Notifier.Update());
             Processing = false;
         }
         catch (Exception e)
@@ -331,7 +273,7 @@
         }
     }
 
-    private void ResetEdittingModel(Course model = null)
+    private void ResetEdittingModel(MailBox model = null)
     {
         EditContext = new EditContext(EdittingModel);
         messageStore = new ValidationMessageStore(EditContext);

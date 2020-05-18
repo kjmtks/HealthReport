@@ -23,6 +23,7 @@ namespace NCVC.App.Models
         {
         }
 
+        public DbSet<MailBox> MailBoxes { get; set; }
         public DbSet<Staff> Staffs { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<Course> Courses { get; set; }
@@ -41,7 +42,11 @@ namespace NCVC.App.Models
 
             modelBuilder.Entity<Course>().ToTable("Course");
             modelBuilder.Entity<Course>().HasKey(x => x.Id);
+            modelBuilder.Entity<Course>().HasOne(x => x.MailBox);
             modelBuilder.Entity<Course>().HasMany(x => x.Histories).WithOne(x => x.Course).HasForeignKey(x => x.CourseId);
+
+            modelBuilder.Entity<MailBox>().ToTable("MailBox");
+            modelBuilder.Entity<MailBox>().HasKey(x => x.Id);
 
             modelBuilder.Entity<Health>().ToTable("Health");
             modelBuilder.Entity<Health>().HasKey(x => x.Id);

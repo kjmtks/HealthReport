@@ -26,17 +26,12 @@ namespace NCVC.App.Models
         public virtual Student Student { get; set; }
     }
 
-    public class Course
+    public class MailBox
     {
         public int Id { get; set; }
 
         [Required, StringLength(64)]
         public string Name { get; set; }
-
-        public DateTime StartDate { get; set; } = DateTime.Today;
-
-        public int NumOfDaysToSearch { get; set; } = 60;
-        public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         [Required, EmailAddress]
         public string EmailAddress { get; set; }
@@ -50,14 +45,79 @@ namespace NCVC.App.Models
         public string ImapMailUserPassword { get; set; }
         [Required]
         public int ImapMailIndexOffset { get; set; }
+        public string SecurityMode { get; set; }
+
+
+        public MailBox GetEntityForEditOrRemove(DatabaseContext context, IConfiguration config) =>
+            context.MailBoxes.Where(x => x.Id == Id).FirstOrDefault();
+        public MailBox GetEntityAsNoTracking(DatabaseContext context, IConfiguration config) =>
+            context.MailBoxes.Where(x => x.Id == Id).AsNoTracking().FirstOrDefault();
+
+
+        public void CreateNew(DatabaseContext context, IConfiguration config)
+        {
+            context.Add(this);
+            context.SaveChanges();
+        }
+
+        public void Update(DatabaseContext context, IConfiguration config, MailBox previous)
+        {
+            context.Update(this);
+        }
+
+        public void Remove(DatabaseContext context, IConfiguration config)
+        {
+            var me = GetEntityForEditOrRemove(context, config);
+            context.Remove(me);
+        }
+
+        public bool ServerSideValidationOnCreate(DatabaseContext context, IConfiguration config, Action<string, string> AddValidationError)
+        {
+            bool result = true;
+            var same_name_instance = context.MailBoxes.Where(u => u.Name == Name).FirstOrDefault();
+            if (same_name_instance != null)
+            {
+                AddValidationError("Name", "既に同じ名前のメールボックスが登録されています．");
+                result = false;
+            }
+            return result;
+        }
+        public bool ServerSideValidationOnUpdate(DatabaseContext context, IConfiguration config, Action<string, string> AddValidationError)
+        {
+            bool result = true;
+            var same_name_instance = context.MailBoxes.Where(u => u.Name == Name).FirstOrDefault();
+            if (same_name_instance != null && same_name_instance.Id != Id)
+            {
+                AddValidationError("Name", "既に同じ名前のメールボックスが登録されています．");
+                result = false;
+            }
+            return result;
+        }
+    }
+
+
+    public class Course
+    {
+        public int Id { get; set; }
+
+        [Required, StringLength(64)]
+        public string Name { get; set; }
+
+        public int MailBoxId { get; set; }
+        public virtual MailBox MailBox { get; set; }
+
+        public DateTime StartDate { get; set; } = DateTime.Today;
+
+        public int NumOfDaysToSearch { get; set; } = 60;
+        public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         public string FilterButtons { get; set; }
 
         public string InitialFilter { get; set; } = "date==today";
 
-        public string SecurityMode { get; set; }
         public string StaffAccounts { get; set; }
 
+        public bool ShowInfectedData { get; set; } = false;
 
         [NotMapped]
         public string StudentAccounts { get; set; }
@@ -69,10 +129,6 @@ namespace NCVC.App.Models
             context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == Id).FirstOrDefault();
         public Course GetEntityAsNoTracking(DatabaseContext context, IConfiguration config) =>
             context.Courses.Where(x => x.Id == Id).AsNoTracking().FirstOrDefault();
-
-
-
-
 
         public void CreateNew(DatabaseContext context, IConfiguration config)
         {
@@ -145,7 +201,7 @@ namespace NCVC.App.Models
             var same_name_instance = context.Courses.Where(u => u.Name == Name).FirstOrDefault();
             if (same_name_instance != null)
             {
-                AddValidationError("Name", "既に同じ名前のコースが登録されています．");
+                AddValidationError("Name", "既に同じ名前のグループが登録されています．");
                 result = false;
             }
             return result;
@@ -156,7 +212,7 @@ namespace NCVC.App.Models
             var same_name_instance = context.Courses.Where(u => u.Name == Name).FirstOrDefault();
             if (same_name_instance != null && same_name_instance.Id != Id)
             {
-                AddValidationError("Name", "既に同じ名前のコースが登録されています．");
+                AddValidationError("Name", "既に同じ名前のグループが登録されています．");
                 result = false;
             }
             return result;
