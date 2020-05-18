@@ -47,40 +47,37 @@
                                 <td>@model.EmailAddress</td>
                                 <td class="right aligned">
 
-                                    <div data-tooltip="新着メールの確認">
-                                        <a class="small item">
-                                            @if (NewMailProcessing)
-                                            {
-                                                <i class="icons">
-                                                    <i class="notched circle loading icon"></i>
-                                                </i>
-                                            }
-                                            else
-                                            {
-                                                <i class="icons" @onclick="async () => { await CheckMailAsync(false, model); }">
-                                                    <i class="sync alternate icon"></i>
-                                                </i>
-                                            }
-                                        </a>
-                                    </div>
+                                    <a class="ui button">
+                                        @if (NewMailProcessing)
+                                        {
+                                            <i class="icons">
+                                                <i class="notched circle loading icon"></i>
+                                            </i>
+                                        }
+                                        else
+                                        {
+                                            <i class="icons" @onclick="async () => { await CheckMailAsync(false, model); }">
+                                                <i class="sync alternate icon"></i>
+                                            </i>
+                                        }
+                                    </a>
 
-                                    <div data-tooltip="全メールの再確認">
-                                        <a class="small item">
-                                            @if (AllMailProcessing)
-                                            {
-                                                <i class="icons">
-                                                    <i class="notched circle loading icon"></i>
-                                                </i>
-                                            }
-                                            else
-                                            {
-                                                <i class="icons" @onclick="async () => { await CheckMailAsync(true, model); }">
-                                                    <i class="sync alternate icon"></i>
-                                                    <i class="inverted corner add icon"></i>
-                                                </i>
-                                            }
-                                        </a>
-                                    </div>
+                                    <a class="ui button">
+                                        @if (AllMailProcessing)
+                                        {
+                                            <i class="icons">
+                                                <i class="notched circle loading icon"></i>
+                                            </i>
+                                        }
+                                        else
+                                        {
+                                            <i class="icons" @onclick="async () => { await CheckMailAsync(true, model); }">
+                                                <i class="sync alternate icon"></i>
+                                                <i class="inverted corner add icon"></i>
+                                            </i>
+                                        }
+                                    </a>
+
                                     <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
                                     <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
                                 </td>
