@@ -23,25 +23,25 @@ namespace NCVC.App.Services
             EnvironmentVariable = environmentVariable;
         }
 
-        public async Task<(int, int, int, int)> PullCsv(Staff staff, Course course, int? index = null)
+        public async Task<(int, int, int, int)> PullCsv(Staff staff, MailBox mailbox, int? index = null)
         {
             int count = 0;
-            int lastIndex = index.HasValue ? index.Value : course.MailBox.ImapMailIndexOffset;
+            int lastIndex = index.HasValue ? index.Value : mailbox.ImapMailIndexOffset;
             var addHealthDateResults = new List<AddHealthDateResult>();
 
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 client.AuthenticationMechanisms.Remove("XOAUTH2");
-                var secureSocketOption = course.MailBox.SecurityMode switch
+                var secureSocketOption = mailbox.SecurityMode switch
                 {
                     "ssl" => SecureSocketOptions.SslOnConnect,
                     "tls" => SecureSocketOptions.StartTls,
                     "none" => SecureSocketOptions.None,
                     _ => SecureSocketOptions.Auto,
                 };
-                client.Connect(course.MailBox.ImapHost, course.MailBox.ImapPort, secureSocketOption);
-                client.Authenticate(course.MailBox.ImapMailUserAccount, course.MailBox.ImapMailUserPassword);
+                client.Connect(mailbox.ImapHost, mailbox.ImapPort, secureSocketOption);
+                client.Authenticate(mailbox.ImapMailUserAccount, mailbox.ImapMailUserPassword);
 
                 var inbox = client.Inbox;
                 inbox.Open(FolderAccess.ReadOnly);
@@ -53,7 +53,7 @@ namespace NCVC.App.Services
                 string normal_subject = EnvironmentVariable.GetMailSubject();
                 string infected_subject = EnvironmentVariable.GetMailInfectedSubject();
 
-                foreach (var msg in messages.Where(x => x.Envelope.Subject.Contains(normal_subject) || x.Envelope.Subject.Contains(infected_subject)))
+                foreach (var msg in messages.Where(x => !string.IsNullOrWhiteSpace(x?.Envelope?.Subject)).Where(x => x.Envelope.Subject.Contains(normal_subject) || x.Envelope.Subject.Contains(infected_subject)))
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
                     var received_at = message.Date.DateTime;
@@ -84,13 +84,13 @@ namespace NCVC.App.Services
                                         }
                                         if (msg.Envelope.Subject.Contains(normal_subject) && row.Count() >= 16)
                                         {
-                                            addHealthDateResults.Add(addHealthData(course, row, date, received_at, msg.Index, false));
+                                            addHealthDateResults.Add(addHealthData(mailbox, row, date, received_at, msg.Index, false));
                                             flg = true;
                                             num++;
                                         }
                                         if (msg.Envelope.Subject.Contains(infected_subject) && row.Count() >= 19)
                                         {
-                                            addHealthDateResults.Add(addHealthData(course, row, date, received_at, msg.Index, true));
+                                            addHealthDateResults.Add(addHealthData(mailbox, row, date, received_at, msg.Index, true));
                                             flg = true;
                                             num++;
                                         }
@@ -104,7 +104,7 @@ namespace NCVC.App.Services
                                 }
                             }
                             await Context.SaveChangesAsync();
-                            Console.WriteLine($"Finishing reading health data from #'{msg.Index}'");
+                            Console.WriteLine($"Finished reading health data from #'{msg.Index}'");
                         }
                     }
                 }
@@ -120,7 +120,7 @@ namespace NCVC.App.Services
                     Operator = staff,
                     OperatedAt = DateTime.Now,
                     LastIndex = lastIndex,
-                    CourseId = course.Id
+                    MailBoxId = mailbox.Id
                 };
                 Context.Add(history);
                 Context.SaveChanges();
@@ -130,7 +130,7 @@ namespace NCVC.App.Services
         }
 
         public enum AddHealthDateResult { AddNewData, UpdateData, Nop }
-        private AddHealthDateResult addHealthData(Course course, string[] row, DateTime measuredDate, DateTime received_at, int msg_index, bool isInfected)
+        private AddHealthDateResult addHealthData(MailBox mailbox, string[] row, DateTime measuredDate, DateTime received_at, int msg_index, bool isInfected)
         {
             var canOverride = EnvironmentVariable.IsOverrideMode();
             var timeFrames = EnvironmentVariable.GetTimeFrames();
@@ -138,8 +138,7 @@ namespace NCVC.App.Services
             var hash = row[0];
             var name = row[1];
 
-            var student = Context.CourseStudentAssignments.Include(x => x.Student).Include(x => x.Course)
-                .Where(x => x.CourseId == course.Id).Select(x => x.Student).Where(x => x.Hash == hash).FirstOrDefault();
+            var student = Context.Students.Where(x => x.Hash == hash).FirstOrDefault();
             if (student == null)
             {
                 return AddHealthDateResult.Nop;
