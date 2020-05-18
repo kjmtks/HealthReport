@@ -444,12 +444,8 @@
         var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
         if (staff != null)
         {
-            var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-            Course = DB.Context.Courses.Include(x => x.StudentAssignments).Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(auth.User.Identity.Name))).FirstOrDefault();
-            if (Course != null)
-            {
-                Allowed = true;
-            }
+            Course = DB.Context.Courses.Include(x => x.StudentAssignments).Where(x => x.Id == id).FirstOrDefault();
+            Allowed = Course != null && (staff.IsAdmin || Course.AssignedStaffAccounts().Contains(staff.Account));
         }
 
         if (!string.IsNullOrWhiteSpace(MailMessage))
