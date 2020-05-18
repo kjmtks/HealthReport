@@ -38,7 +38,7 @@ namespace NCVC.App.Controllers
                 return new NotFoundResult();
             }
             var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-            var course = DB.Context.Courses.Include(x => x.Histories).ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(HttpContext.User.Identity.Name))).FirstOrDefault();
+            var course = DB.Context.Courses.ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(HttpContext.User.Identity.Name))).FirstOrDefault();
             if (course == null)
             {
                 return new NotFoundResult();
@@ -126,7 +126,7 @@ namespace NCVC.App.Controllers
                 return new NotFoundResult();
             }
             var isTestMode = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TEST_MODE"));
-            var course = DB.Context.Courses.Include(x => x.Histories).ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(HttpContext.User.Identity.Name))).FirstOrDefault();
+            var course = DB.Context.Courses.ToArray().Where(x => x.Id == id && (isTestMode || staff.IsAdmin || x.AssignedStaffAccounts().Contains(HttpContext.User.Identity.Name))).FirstOrDefault();
             if (course == null)
             {
                 return new NotFoundResult();

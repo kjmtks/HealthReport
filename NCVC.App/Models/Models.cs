@@ -47,6 +47,7 @@ namespace NCVC.App.Models
         public int ImapMailIndexOffset { get; set; }
         public string SecurityMode { get; set; }
 
+        public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         public MailBox GetEntityForEditOrRemove(DatabaseContext context, IConfiguration config) =>
             context.MailBoxes.Where(x => x.Id == Id).FirstOrDefault();
@@ -109,7 +110,6 @@ namespace NCVC.App.Models
         public DateTime StartDate { get; set; } = DateTime.Today;
 
         public int NumOfDaysToSearch { get; set; } = 60;
-        public virtual ICollection<History> Histories { get; set; } = new List<History>();
 
         public string FilterButtons { get; set; }
 
@@ -452,8 +452,8 @@ namespace NCVC.App.Models
         public int Count { get; set; }
         public int OperatorId { get; set; }
         public virtual Staff Operator { get; set; }
-        public int CourseId { get; set; }
-        public virtual Course Course { get; set; }
+        public int MailBoxId { get; set; }
+        public virtual MailBox MailBox { get; set; }
         public int LastIndex { get; set; }
         public DateTime OperatedAt { get; set; }
     }

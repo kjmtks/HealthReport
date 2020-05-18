@@ -6,134 +6,175 @@
 @inject DatabaseService DB;
 @inject IConfiguration Config;
 @inject EnvironmentVariableService EV;
+@inject CsvService CSV;
 
 
-<div class="@CssClass">
-    <h2 class="ui header">
-        <i class="mail icon"></i>
-        <div class="content">
-            メールボックス
-        </div>
-    </h2>
-    <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
+    <div class="@CssClass">
+        <h2 class="ui header">
+            <i class="mail icon"></i>
+            <div class="content">
+                メールボックス
+            </div>
+        </h2>
+        <ErrorMessageComponent Subject="@ErrorSubject" ErrorMessage="@ErrorMessage" />
 
-    <div class="ui basic segment">
-        <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
-            <div class="ui text loader">Please wait...</div>
-        </div>
-        <div class="ui menu top attached">
-            <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
-        </div>
-        <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
-            <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
-                <thead>
-                    <tr>
-                        <th class="single line">名前</th>
-                        <th class="single line">メールアドレス</th>
-                        <th class="single line"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var model in Pagination.ShowedModels)
-                    {
+        @if (!string.IsNullOrWhiteSpace(MailMessage))
+        {
+            <p>@MailMessage</p>
+        }
+
+        <div class="ui basic segment">
+            <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
+                <div class="ui text loader">Please wait...</div>
+            </div>
+            <div class="ui menu top attached">
+                <a class="right item" @onclick="() => OpenCreate()"><i class="plus icon"></i></a>
+            </div>
+            <Paginated Collection="@Collection" @ref="@Pagination" CssClass="attached">
+                <table class="ui padded table @(Pagination.HasPagination ? "" : "bottom") attached">
+                    <thead>
                         <tr>
-                            <td>@model.Name</td>
-                            <td>@model.EmailAddress</td>
-                            <td class="right aligned">
-                                <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
-                                <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
-                            </td>
+                            <th class="single line">名前</th>
+                            <th class="single line">メールアドレス</th>
+                            <th class="single line"></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </Paginated>
-    </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var model in Pagination.ShowedModels)
+                        {
+                            <tr>
+                                <td>@model.Name</td>
+                                <td>@model.EmailAddress</td>
+                                <td class="right aligned">
+
+                                    <div data-tooltip="新着メールの確認">
+                                        <a class="small item">
+                                            @if (NewMailProcessing)
+                                            {
+                                                <i class="icons">
+                                                    <i class="notched circle loading icon"></i>
+                                                </i>
+                                            }
+                                            else
+                                            {
+                                                <i class="icons" @onclick="async () => { await CheckMailAsync(false, model); }">
+                                                    <i class="sync alternate icon"></i>
+                                                </i>
+                                            }
+                                        </a>
+                                    </div>
+
+                                    <div data-tooltip="全メールの再確認">
+                                        <a class="small item">
+                                            @if (AllMailProcessing)
+                                            {
+                                                <i class="icons">
+                                                    <i class="notched circle loading icon"></i>
+                                                </i>
+                                            }
+                                            else
+                                            {
+                                                <i class="icons" @onclick="async () => { await CheckMailAsync(true, model); }">
+                                                    <i class="sync alternate icon"></i>
+                                                    <i class="inverted corner add icon"></i>
+                                                </i>
+                                            }
+                                        </a>
+                                    </div>
+                                    <a class="ui blue icon button" @onclick="() => OpenEdit(model)"><i class="edit icon"></i></a>
+                                    <a class="ui red icon button" @onclick="() => RemoveAsync(model)"><i class="trash icon"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </Paginated>
+        </div>
 
 
 
-    <div class="ui modal" id="edit-form-@ComponentId">
-        <div class="header">@(Mode == EditMode.CreateNew ? "新規作成" : "編集")</div>
-        <div class="content">
+        <div class="ui modal" id="edit-form-@ComponentId">
+            <div class="header">@(Mode == EditMode.CreateNew ? "新規作成" : "編集")</div>
+            <div class="content">
 
-            <EditForm EditContext="@EditContext" OnSubmit="@Submit">
-                <DataAnnotationsValidator />
-                <div class="ui form">
-                    <div class="field">
-                        <label>名前</label>
-                        <InputText @bind-Value="@EdittingModel.Name" />
-                        <ValidationMessage For="@(() => EdittingModel.Name)" />
-                    </div>
-                    <div class="field">
-                        <label>メールアドレス</label>
-                        <InputText @bind-Value="@EdittingModel.EmailAddress" />
-                        <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
-                    </div>
-                    <div class="field">
-                        <label>IMAP ホスト</label>
-                        <InputText @bind-Value="@EdittingModel.ImapHost" />
-                        <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
-                    </div>
-                    <div class="field">
-                        <label>IMAP ポート</label>
-                        <InputNumber @bind-Value="@EdittingModel.ImapPort" />
-                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
-                    </div>
-                    <div class="field">
-                        <label>IMAP暗号化方式</label>
-                        <select class="ui fluid dropdown" @bind="securityMode">
-                            @if (EdittingModel.SecurityMode == "auto")
-                            {
-                                <option value="auto" selected>auto</option>
-                            }
-                            else
-                            {
-                                <option value="auto">auto</option>
-                            }
-                            @if (EdittingModel.SecurityMode == "ssl")
-                            {
-                                <option value="ssl" selected>ssl</option>
-                            }
-                            else
-                            {
-                                <option value="ssl">ssl</option>
-                            }
-                            @if (EdittingModel.SecurityMode == "none")
-                            {
-                                <option value="none" selected>none</option>
-                            }
-                            else
-                            {
-                                <option value="none">none</option>
-                            }
-                        </select>
-                        <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
-                    </div>
-                    <div class="field">
-                        <label>IMAP アカウント</label>
-                        <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
-                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
-                    </div>
-                    <div class="field">
-                        <label>IMAP パスワード</label>
-                        <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
-                        <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
-                    </div>
-                    <div class="content">
-                        <div class="actions">
-                            <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
-                            <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                    <DataAnnotationsValidator />
+                    <div class="ui form">
+                        <div class="field">
+                            <label>名前</label>
+                            <InputText @bind-Value="@EdittingModel.Name" />
+                            <ValidationMessage For="@(() => EdittingModel.Name)" />
+                        </div>
+                        <div class="field">
+                            <label>メールアドレス</label>
+                            <InputText @bind-Value="@EdittingModel.EmailAddress" />
+                            <ValidationMessage For="@(() => EdittingModel.EmailAddress)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP ホスト</label>
+                            <InputText @bind-Value="@EdittingModel.ImapHost" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapHost)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP ポート</label>
+                            <InputNumber @bind-Value="@EdittingModel.ImapPort" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP暗号化方式</label>
+                            <select class="ui fluid dropdown" @bind="securityMode">
+                                @if (EdittingModel.SecurityMode == "auto")
+                                {
+                                    <option value="auto" selected>auto</option>
+                                }
+                                else
+                                {
+                                    <option value="auto">auto</option>
+                                }
+                                @if (EdittingModel.SecurityMode == "ssl")
+                                {
+                                    <option value="ssl" selected>ssl</option>
+                                }
+                                else
+                                {
+                                    <option value="ssl">ssl</option>
+                                }
+                                @if (EdittingModel.SecurityMode == "none")
+                                {
+                                    <option value="none" selected>none</option>
+                                }
+                                else
+                                {
+                                    <option value="none">none</option>
+                                }
+                            </select>
+                            <ValidationMessage For="@(() => EdittingModel.ImapPort)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP アカウント</label>
+                            <InputText @bind-Value="@EdittingModel.ImapMailUserAccount" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserAccount)" />
+                        </div>
+                        <div class="field">
+                            <label>IMAP パスワード</label>
+                            <InputText type="password" @bind-Value="@EdittingModel.ImapMailUserPassword" />
+                            <ValidationMessage For="@(() => EdittingModel.ImapMailUserPassword)" />
+                        </div>
+                        <div class="content">
+                            <div class="actions">
+                                <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
+                                <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </EditForm>
+                </EditForm>
 
+            </div>
         </div>
+
+
+
     </div>
-
-
-
-</div>
 
 @code{
     [Parameter]
@@ -157,6 +198,9 @@
     protected MailBox BeforeModel = null;
     protected enum EditMode { CreateNew, Edit }
 
+    protected bool NewMailProcessing = false;
+    protected bool AllMailProcessing = false;
+    protected string MailMessage;
 
     public MailBoxManager()
     {
@@ -288,4 +332,82 @@
 
 
 
+
+
+    protected async Task CheckMailAsync(bool isAll, MailBox mailbox)
+    {
+        if (!Processing)
+        {
+            Processing = true;
+            if (isAll)
+            {
+                AllMailProcessing = true;
+            }
+            else
+            {
+                NewMailProcessing = true;
+            }
+            StateHasChanged();
+
+            await Task.Run(async () =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await Task.Run(async () =>
+                    {
+                        var auth = await Auth.GetAuthenticationStateAsync();
+                        var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
+                        if (staff == null)
+                        {
+                            return;
+                        }
+
+                        try
+                        {
+                            int index, count, numOfNewData, numOfUpdated;
+                            if (isAll)
+                            {
+                                (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, mailbox);
+                            }
+                            else
+                            {
+                                var lastHistroy = DB.Context.Histories.Include(x => x.Operator).ToArray().Where(x => x.MailBoxId == mailbox.Id).OrderBy(x => x.OperatedAt).LastOrDefault();
+                                if (lastHistroy == null)
+                                {
+                                    (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, mailbox);
+                                }
+                                else
+                                {
+                                    (index, count, numOfNewData, numOfUpdated) = await CSV.PullCsv(staff, mailbox, lastHistroy.LastIndex);
+                                }
+                            }
+                            if (count == 0)
+                            {
+                                MailMessage = "新着メールはありません．";
+                            }
+                            else
+                            {
+                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを受け取りました．";
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            MailMessage = e.Message;
+                        }
+                    });
+                });
+            });
+
+            Processing = false;
+            if (isAll)
+            {
+                AllMailProcessing = false;
+            }
+            else
+            {
+                NewMailProcessing = false;
+            }
+            StateHasChanged();
+        }
+    }
 }

@@ -43,10 +43,10 @@ namespace NCVC.App.Models
             modelBuilder.Entity<Course>().ToTable("Course");
             modelBuilder.Entity<Course>().HasKey(x => x.Id);
             modelBuilder.Entity<Course>().HasOne(x => x.MailBox);
-            modelBuilder.Entity<Course>().HasMany(x => x.Histories).WithOne(x => x.Course).HasForeignKey(x => x.CourseId);
 
             modelBuilder.Entity<MailBox>().ToTable("MailBox");
             modelBuilder.Entity<MailBox>().HasKey(x => x.Id);
+            modelBuilder.Entity<MailBox>().HasMany(x => x.Histories).WithOne(x => x.MailBox).HasForeignKey(x => x.MailBoxId);
 
             modelBuilder.Entity<Health>().ToTable("Health");
             modelBuilder.Entity<Health>().HasKey(x => x.Id);
@@ -55,7 +55,7 @@ namespace NCVC.App.Models
             modelBuilder.Entity<History>().ToTable("History");
             modelBuilder.Entity<History>().HasKey(x => x.Id);
             modelBuilder.Entity<History>().HasOne(x => x.Operator);
-            modelBuilder.Entity<History>().HasOne(x => x.Course);
+            modelBuilder.Entity<History>().HasOne(x => x.MailBox);
 
             modelBuilder.Entity<CourseStudentAssignment>().ToTable("CourseStudentAssignment");
             modelBuilder.Entity<CourseStudentAssignment>().HasKey(a => new { a.StudentId, a.CourseId });
