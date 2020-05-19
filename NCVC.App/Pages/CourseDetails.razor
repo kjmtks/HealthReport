@@ -46,24 +46,6 @@
                             <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
                         </div>
 
-                        <div data-tooltip="新着メールの確認">
-                            <a class="small item" @onclick="async () => { await CheckMailAsync(false); }">
-                                @if (NewMailProcessing)
-                                {
-                                    <i class="icons">
-                                        <i class="notched circle loading icon"></i>
-                                    </i>
-                                }
-                                else
-                                {
-                                    <i class="icons">
-                                        <i class="sync alternate icon"></i>
-                                    </i>
-                                }
-                                新着メールの確認
-                            </a>
-                        </div>
-
                         <AuthorizeView Roles="Admin" Context="adminContext">
                             <div data-tooltip="全メールの再確認">
                                 <a class="small item">
@@ -84,8 +66,26 @@
                             </div>
                         </AuthorizeView>
 
+                        <div data-tooltip="新着メールの確認">
+                            <a class="small item" @onclick="async () => { await CheckMailAsync(false); }">
+                                @if (NewMailProcessing)
+                                {
+                                    <i class="icons">
+                                        <i class="notched circle loading icon"></i>
+                                    </i>
+                                }
+                                else
+                                {
+                                    <i class="icons">
+                                        <i class="sync alternate icon"></i>
+                                    </i>
+                                }
+                                <small>新着メールの確認</small>
+                            </a>
+                        </div>
+
                         <div class="small item">
-                            @MailMessage
+                            <small>@MailMessage</small>
                         </div>
 
                         <div class="right borderless menu">
@@ -414,7 +414,7 @@
         Loaded = false;
         Notifier.Notify += OnNotify;
         await Update();
-        await CheckMailAsync(false);
+        await CheckMailAsync(false, true);
         SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
         await FilterAsync(FilterString);
     }
@@ -665,7 +665,7 @@
     }
 
 
-    protected async Task CheckMailAsync(bool isAll)
+    protected async Task CheckMailAsync(bool isAll, bool first = false)
     {
         if (!Processing)
         {
@@ -714,11 +714,19 @@
                             }
                             if (count == 0)
                             {
-                                MailMessage = "新着メールはありません．";
+                                if(first)
+                                {
+                                    MailMessage = $"{DateTime.Now.ToString()} までに届いたメールを集計して右記の検索条件で表示しています";
+
+                                }
+                                else
+                                {
+                                    MailMessage = "新着メールはありません";
+                                }
                             }
                             else
                             {
-                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを受け取りました．";
+                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを取り込みました";
                             }
                         }
                         catch (Exception e)
