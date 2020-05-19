@@ -138,6 +138,11 @@ namespace NCVC.App.Services
             var hash = row[0];
             var name = row[1];
 
+            if(string.IsNullOrWhiteSpace(hash))
+            {
+                return AddHealthDateResult.Nop;
+            }
+
             var student = Context.Students.Where(x => x.Hash == hash).FirstOrDefault();
             if (student == null)
             {

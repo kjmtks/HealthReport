@@ -145,10 +145,10 @@ namespace NCVC.App.Models
                     {
                         Account = s,
                         Name = s,
-                        Hash = "未登録"
+                        Hash = ""
                     };
+                    context.Add(student);
                 }
-                context.Add(student);
 
                 var a = new CourseStudentAssignment()
                 {
@@ -175,10 +175,10 @@ namespace NCVC.App.Models
                     {
                         Account = s,
                         Name = s,
-                        Hash = "未登録"
+                        Hash = ""
                     };
+                    context.Add(student);
                 }
-                context.Add(student);
 
                 var a = new CourseStudentAssignment()
                 {

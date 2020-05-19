@@ -190,7 +190,22 @@
                                         <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
                                         <td>@health.Student.Name</td>
 
-                                        @if (health.IsEmptyData)
+                                        @if(string.IsNullOrWhiteSpace(health.Student.Hash))
+                                        {
+                                            if (!ShowInfected)
+                                            {
+                                                <td colspan="14">
+                                                    報告者IDが未登録のユーザー
+                                                </td>
+                                            }
+                                            else
+                                            {
+                                                <td colspan="17">
+                                                    報告者IDが未登録のユーザー
+                                                </td>
+                                            }
+                                        }
+                                        else if (health.IsEmptyData)
                                         {
                                             if (!ShowInfected)
                                             {
