@@ -47,7 +47,7 @@
                         </div>
 
                         <div data-tooltip="新着メールの確認">
-                            <a class="small item">
+                            <a class="small item" @onclick="async () => { await CheckMailAsync(false); }">
                                 @if (NewMailProcessing)
                                 {
                                     <i class="icons">
@@ -56,10 +56,11 @@
                                 }
                                 else
                                 {
-                                    <i class="icons" @onclick="async () => { await CheckMailAsync(false); }">
+                                    <i class="icons">
                                         <i class="sync alternate icon"></i>
                                     </i>
                                 }
+                                新着メールの確認
                             </a>
                         </div>
 
@@ -413,6 +414,7 @@
         Loaded = false;
         Notifier.Notify += OnNotify;
         await Update();
+        await CheckMailAsync(false);
         SetConditionAndOrder(Course.InitialFilter ?? "date==today", "");
         await FilterAsync(FilterString);
     }
