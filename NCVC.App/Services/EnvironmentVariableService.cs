@@ -14,6 +14,11 @@ namespace NCVC.App.Services
             return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OVERRIDE"));
         }
 
+        public bool ShowCopyright()
+        {
+            return string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HIDE_COPYRIGHT"));
+        }
+
         public string GetTitle()
         {
             return Environment.GetEnvironmentVariable("TITLE") ?? "Health Report";

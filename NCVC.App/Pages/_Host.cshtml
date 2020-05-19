@@ -51,14 +51,17 @@
         @(await Html.RenderComponentAsync<App>(RenderMode.ServerPrerendered))
     </app>
 
-    <div class="ui center aligned grid">
-        <div class="ui footer">
-            <div class="ui basic segment">
-                Ⓒ 2020 <a href="https://github.com/kjmtks">Takeshi Kojima</a>
-                Released under the <a href="https://opensource.org/licenses/mit-license.php">MIT license</a>
+    @if (EV.ShowCopyright())
+    {
+        <div class="ui center aligned grid">
+            <div class="ui footer">
+                <div class="ui basic segment">
+                    Ⓒ 2020 <a href="https://github.com/kjmtks">Takeshi Kojima</a>
+                    Released under the <a href="https://opensource.org/licenses/mit-license.php">MIT license</a>
+                </div>
             </div>
         </div>
-    </div>
+    }
 
     <script src="_framework/blazor.server.js"></script>
 </body>
