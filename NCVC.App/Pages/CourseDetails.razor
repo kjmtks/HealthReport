@@ -29,19 +29,6 @@
                     </div>
 
                     <div class="ui borderless menu top attached">
-                        @if (Course.ShowInfectedData)
-                        {
-                            if (!ShowInfected)
-                            {
-                                <div data-tooltip="感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = true; }'><i class="fas fa-virus"></i></a></div>
-
-                            }
-                            else
-                            {
-                                <div data-tooltip="非感染者データを表示"><a class="small item" @onclick='() => { ShowInfected = false; }'><i class="fas fa-virus-slash"></i></a></div>
-                            }
-                        }
-
                         <div data-tooltip="結果をCSV形式でダウンロード">
                             <a class="ui item" target="_blank" href='@GetCsvFileUrl(FilterString)'><i class="download icon"></i></a>
                         </div>
@@ -448,6 +435,7 @@
         {
             Course = DB.Context.Courses.Include(x => x.MailBox).Include(x => x.StudentAssignments).Where(x => x.Id == id).FirstOrDefault();
             Allowed = Course != null && (staff.IsAdmin || Course.AssignedStaffAccounts().Contains(staff.Account));
+            ShowInfected = Course.ShowInfectedData;
         }
 
         if (!string.IsNullOrWhiteSpace(MailMessage))
