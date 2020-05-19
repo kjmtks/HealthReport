@@ -73,111 +73,111 @@ SELECT
   {columns}
 FROM
   (SELECT
-    DISTINCT on (h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"")
+    DISTINCT on (h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"")
     h.*,
     s.""Account"",
     s.""Tags""
   FROM ((
     (SELECT
       (SELECT COALESCE(max(""Id""), 0) FROM ""Health"") + row_number() OVER () AS ""Id"",
-      0 AS ""BodyTemperature"",
-      TRUE AS ""IsEmptyData"",
-      FALSE AS ""IsInfected"",
-      {stc}
-      t.regexp_split_to_table AS ""TimeFrame"",
-      u.""Id"" AS ""StudentId"",
-      FALSE AS ""HasError"",
-      FALSE AS ""HasWarning"",
-      0 AS ""InfectedBodyTemperature1"",
-      0 AS ""InfectedBodyTemperature2"",
-      '00:00:00' AS ""InfectedMeasuredTime1"",
-      '00:00:00' AS ""InfectedMeasuredTime2"",
-      0 AS ""InfectedOxygenSaturation1"",
-      0 AS ""InfectedOxygenSaturation2"",
-      '' AS ""InfectedStringColumn1"",
-      '' AS ""InfectedStringColumn2"",
-      '' AS ""InfectedStringColumn3"",
-      '' AS ""InfectedStringColumn4"",
-      '' AS ""InfectedStringColumn5"",
-      '' AS ""InfectedStringColumn6"",
-      '' AS ""InfectedStringColumn7"",
-      '' AS ""InfectedStringColumn8"",
-      '' AS ""InfectedStringColumn9"",
-      '' AS ""InfectedStringColumn10"",
-      0 AS ""MailIndex"",
-      '' AS ""RawUserId"",
-      '' AS ""RawUserName"",
-      '' AS ""StringColumn1"",
-      '' AS ""StringColumn2"",
-      '' AS ""StringColumn3"",
-      '' AS ""StringColumn4"",
-      '' AS ""StringColumn5"",
-      '' AS ""StringColumn6"",
-      '' AS ""StringColumn7"",
-      '' AS ""StringColumn8"",
-      '' AS ""StringColumn9"",
-      '' AS ""StringColumn10"",
-      '' AS ""StringColumn11"",
-      '' AS ""StringColumn12"",
-      (date '2020-01-01') AS ""UploadedAt""
-    FROM
-      generate_series(0, {span.Days}) AS arr(i),
-      (SELECT regexp_split_to_table('{string.Join(";", timeframes.Select(x => x.Name))}', ';')) AS t
-    CROSS JOIN
-      ""Student"" AS u
-  )
-  UNION ALL
-  (
-    SELECT
-      h.""Id"" AS ""Id"",
-      h.""BodyTemperature"" AS ""BodyTemperature"",
-      h.""IsEmptyData"" AS ""IsEmptyData"",
-      h.""IsInfected"" AS ""IsInfected"",
-      h.""MeasuredAt"" AS ""MeasuredAt"",
-      h.""TimeFrame"" AS ""TimeFrame"",
-      h.""StudentId"" AS ""StudentId"",
-      h.""HasError"" AS ""HasError"",
-      h.""HasWarning"" AS ""HasWarning"",
-      h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
-      h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
-      h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
-      h.""InfectedMeasuredTime2"" AS ""InfectedMeasuredTime2"",
-      h.""InfectedOxygenSaturation1"" AS ""InfectedOxygenSaturation1"",
-      h.""InfectedOxygenSaturation2"" AS ""InfectedOxygenSaturation2"",
-      h.""InfectedStringColumn1"" AS ""InfectedStringColumn1"",
-      h.""InfectedStringColumn2"" AS ""InfectedStringColumn2"",
-      h.""InfectedStringColumn3"" AS ""InfectedStringColumn3"",
-      h.""InfectedStringColumn4"" AS ""InfectedStringColumn4"",
-      h.""InfectedStringColumn5"" AS ""InfectedStringColumn5"",
-      h.""InfectedStringColumn6"" AS ""InfectedStringColumn6"",
-      h.""InfectedStringColumn7"" AS ""InfectedStringColumn7"",
-      h.""InfectedStringColumn8"" AS ""InfectedStringColumn8"",
-      h.""InfectedStringColumn9"" AS ""InfectedStringColumn9"",
-      h.""InfectedStringColumn10"" AS ""InfectedStringColumn10"",
-      h.""MailIndex"" AS ""MailIndex"",
-      h.""RawUserId"" AS ""RawUserId"",
-      h.""RawUserName"" AS ""RawUserName"",
-      h.""StringColumn1"" AS ""StringColumn1"",
-      h.""StringColumn2"" AS ""StringColumn2"",
-      h.""StringColumn3"" AS ""StringColumn3"",
-      h.""StringColumn4"" AS ""StringColumn4"",
-      h.""StringColumn5"" AS ""StringColumn5"",
-      h.""StringColumn6"" AS ""StringColumn6"",
-      h.""StringColumn7"" AS ""StringColumn7"",
-      h.""StringColumn8"" AS ""StringColumn8"",
-      h.""StringColumn9"" AS ""StringColumn9"",
-      h.""StringColumn10"" AS ""StringColumn10"",
-      h.""StringColumn11"" AS ""StringColumn11"",
-      h.""StringColumn12"" AS ""StringColumn12"",
-      h.""UploadedAt"" AS ""UploadedAt""
-    FROM
-      ""Health"" AS h
-    )
-  ) as h
-  INNER JOIN
-    ""Student"" AS s
-  ON
-    h.""StudentId"" = s.""Id""
+        0 AS ""BodyTemperature"",
+        TRUE AS ""IsEmptyData"",
+        FALSE AS ""IsInfected"",
+        {stc}
+        t.regexp_split_to_table AS ""TimeFrame"",
+        u.""Id"" AS ""StudentId"",
+        FALSE AS ""HasError"",
+        FALSE AS ""HasWarning"",
+        0 AS ""InfectedBodyTemperature1"",
+        0 AS ""InfectedBodyTemperature2"",
+        '00:00:00' AS ""InfectedMeasuredTime1"",
+        '00:00:00' AS ""InfectedMeasuredTime2"",
+        0 AS ""InfectedOxygenSaturation1"",
+        0 AS ""InfectedOxygenSaturation2"",
+        '' AS ""InfectedStringColumn1"",
+        '' AS ""InfectedStringColumn2"",
+        '' AS ""InfectedStringColumn3"",
+        '' AS ""InfectedStringColumn4"",
+        '' AS ""InfectedStringColumn5"",
+        '' AS ""InfectedStringColumn6"",
+        '' AS ""InfectedStringColumn7"",
+        '' AS ""InfectedStringColumn8"",
+        '' AS ""InfectedStringColumn9"",
+        '' AS ""InfectedStringColumn10"",
+        0 AS ""MailIndex"",
+        '' AS ""RawUserId"",
+        '' AS ""RawUserName"",
+        '' AS ""StringColumn1"",
+        '' AS ""StringColumn2"",
+        '' AS ""StringColumn3"",
+        '' AS ""StringColumn4"",
+        '' AS ""StringColumn5"",
+        '' AS ""StringColumn6"",
+        '' AS ""StringColumn7"",
+        '' AS ""StringColumn8"",
+        '' AS ""StringColumn9"",
+        '' AS ""StringColumn10"",
+        '' AS ""StringColumn11"",
+        '' AS ""StringColumn12"",
+        (date '2020-01-01') AS ""UploadedAt""
+      FROM
+        generate_series(0, {span.Days}) AS arr(i),
+        (SELECT regexp_split_to_table('{string.Join(";", timeframes.Select(x => x.Name))}', ';')) AS t
+      CROSS JOIN
+        (SELECT ""Id"" FROM ""Student"" AS s INNER JOIN ""CourseStudentAssignment"" AS a ON a.""StudentId"" = s.""Id"" AND a.""CourseId"" = {courseId}) as u
+      )
+      UNION ALL
+      (
+        SELECT
+          h.""Id"" AS ""Id"",
+          h.""BodyTemperature"" AS ""BodyTemperature"",
+          h.""IsEmptyData"" AS ""IsEmptyData"",
+          h.""IsInfected"" AS ""IsInfected"",
+          h.""MeasuredAt"" AS ""MeasuredAt"",
+          COALESCE(h.""TimeFrame"", '') AS ""TimeFrame"",
+          h.""StudentId"" AS ""StudentId"",
+          h.""HasError"" AS ""HasError"",
+          h.""HasWarning"" AS ""HasWarning"",
+          h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
+          h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
+          h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
+          h.""InfectedMeasuredTime2"" AS ""InfectedMeasuredTime2"",
+          h.""InfectedOxygenSaturation1"" AS ""InfectedOxygenSaturation1"",
+          h.""InfectedOxygenSaturation2"" AS ""InfectedOxygenSaturation2"",
+          h.""InfectedStringColumn1"" AS ""InfectedStringColumn1"",
+          h.""InfectedStringColumn2"" AS ""InfectedStringColumn2"",
+          h.""InfectedStringColumn3"" AS ""InfectedStringColumn3"",
+          h.""InfectedStringColumn4"" AS ""InfectedStringColumn4"",
+          h.""InfectedStringColumn5"" AS ""InfectedStringColumn5"",
+          h.""InfectedStringColumn6"" AS ""InfectedStringColumn6"",
+          h.""InfectedStringColumn7"" AS ""InfectedStringColumn7"",
+          h.""InfectedStringColumn8"" AS ""InfectedStringColumn8"",
+          h.""InfectedStringColumn9"" AS ""InfectedStringColumn9"",
+          h.""InfectedStringColumn10"" AS ""InfectedStringColumn10"",
+          h.""MailIndex"" AS ""MailIndex"",
+          h.""RawUserId"" AS ""RawUserId"",
+          h.""RawUserName"" AS ""RawUserName"",
+          h.""StringColumn1"" AS ""StringColumn1"",
+          h.""StringColumn2"" AS ""StringColumn2"",
+          h.""StringColumn3"" AS ""StringColumn3"",
+          h.""StringColumn4"" AS ""StringColumn4"",
+          h.""StringColumn5"" AS ""StringColumn5"",
+          h.""StringColumn6"" AS ""StringColumn6"",
+          h.""StringColumn7"" AS ""StringColumn7"",
+          h.""StringColumn8"" AS ""StringColumn8"",
+          h.""StringColumn9"" AS ""StringColumn9"",
+          h.""StringColumn10"" AS ""StringColumn10"",
+          h.""StringColumn11"" AS ""StringColumn11"",
+          h.""StringColumn12"" AS ""StringColumn12"",
+          h.""UploadedAt"" AS ""UploadedAt""
+        FROM
+          ""Health"" AS h
+      )
+    ) as h
+    INNER JOIN
+      ""Student"" AS s
+    ON
+      h.""StudentId"" = s.""Id""
   )
   INNER JOIN
     ""CourseStudentAssignment"" AS a
@@ -185,9 +185,8 @@ FROM
     a.""StudentId"" = s.""Id"" AND a.""CourseId"" = {courseId}
   ORDER BY
     h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"", h.""IsEmptyData""
-  ) as h
+) as h
 ");
-
             var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x)})").ToList();
             // var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
