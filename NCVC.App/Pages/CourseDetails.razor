@@ -721,12 +721,12 @@
                                 }
                                 else
                                 {
-                                    MailMessage = "新着メールはありません";
+                                    MailMessage = $"新着メールはありません（最終確認日時: {DateTime.Now.ToString()}）";
                                 }
                             }
                             else
                             {
-                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを取り込みました";
+                                MailMessage = $"{numOfNewData} 件の新規データと {numOfUpdated} 件の更新データを取り込みました（最終確認日時: {DateTime.Now.ToString()}）";
                             }
                         }
                         catch (Exception e)
