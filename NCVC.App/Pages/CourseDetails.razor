@@ -446,7 +446,7 @@
         var staff = DB.Context.Staffs.Where(x => x.Account == auth.User.Identity.Name).FirstOrDefault();
         if (staff != null)
         {
-            Course = DB.Context.Courses.Include(x => x.StudentAssignments).Where(x => x.Id == id).FirstOrDefault();
+            Course = DB.Context.Courses.Include(x => x.MailBox).Include(x => x.StudentAssignments).Where(x => x.Id == id).FirstOrDefault();
             Allowed = Course != null && (staff.IsAdmin || Course.AssignedStaffAccounts().Contains(staff.Account));
         }
 
