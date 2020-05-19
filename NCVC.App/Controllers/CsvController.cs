@@ -27,6 +27,8 @@ namespace NCVC.App.Controllers
         [HttpGet("course/{courseId}/report.csv")]
         public IActionResult CsvFile(string courseId, [FromQuery]string filterString)
         {
+            Console.WriteLine($"courseId: {courseId}");
+            Console.WriteLine($"filterString: {filterString}");
             var pathBase = HttpContext.Request.PathBase.HasValue ? HttpContext.Request.PathBase.Value : "";
             if (!int.TryParse(courseId, out var id))
             {
@@ -50,7 +52,8 @@ namespace NCVC.App.Controllers
             {
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-                var hasTimeFrames = EV.GetTimeFrames().Count() > 0;
+                var tfs = EV.GetTimeFrames();
+                var hasTimeFrames = tfs != null ? EV.GetTimeFrames()?.Count() > 0 : false;
 
                 using (var w = new StreamWriter(ms, Encoding.GetEncoding("Shift_JIS")))
                 {
