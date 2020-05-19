@@ -139,15 +139,23 @@ namespace NCVC.App.Models
             foreach (var s in newStudents)
             {
                 Student student = context.Students.Where(x => x.Account == s).FirstOrDefault();
-                if (student != null)
+                if (student == null)
                 {
-                    var a = new CourseStudentAssignment()
+                    student = new Student()
                     {
-                        CourseId = Id,
-                        StudentId = student.Id
+                        Account = s,
+                        Name = s,
+                        Hash = "未登録"
                     };
-                    context.Add(a);
                 }
+                context.Add(student);
+
+                var a = new CourseStudentAssignment()
+                {
+                    CourseId = Id,
+                    Student = student
+                };
+                context.Add(a);
             }
         }
 
@@ -161,15 +169,23 @@ namespace NCVC.App.Models
             foreach (var s in addStudents)
             {
                 Student student = context.Students.Where(x => x.Account == s).FirstOrDefault();
-                if (student != null)
+                if (student == null)
                 {
-                    var a = new CourseStudentAssignment()
+                    student = new Student()
                     {
-                        CourseId = Id,
-                        StudentId = student.Id
+                        Account = s,
+                        Name = s,
+                        Hash = "未登録"
                     };
-                    context.Add(a);
                 }
+                context.Add(student);
+
+                var a = new CourseStudentAssignment()
+                {
+                    CourseId = Id,
+                    Student = student
+                };
+                context.Add(a);
             }
             foreach (var s in removeStudents)
             {
