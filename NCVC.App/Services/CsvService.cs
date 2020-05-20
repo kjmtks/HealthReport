@@ -88,7 +88,7 @@ namespace NCVC.App.Services
                                             flg = true;
                                             num++;
                                         }
-                                        if (msg.Envelope.Subject.Contains(infected_subject) && row.Count() >= 19)
+                                        if (msg.Envelope.Subject.Contains(infected_subject) && row.Count() >= 20)
                                         {
                                             addHealthDateResults.Add(addHealthData(mailbox, row, date, received_at, msg.Index, true));
                                             flg = true;
@@ -138,7 +138,7 @@ namespace NCVC.App.Services
             var hash = row[0];
             var name = row[1];
 
-            if(string.IsNullOrWhiteSpace(hash))
+            if (string.IsNullOrWhiteSpace(hash))
             {
                 return AddHealthDateResult.Nop;
             }
@@ -257,6 +257,7 @@ namespace NCVC.App.Services
                 health.InfectedStringColumn8 = row[16].Trim();
                 health.InfectedStringColumn9 = row[17].Trim();
                 health.InfectedStringColumn10 = row[18].Trim();
+                health.InfectedStringColumn11 = row[19].Trim();
             }
             if (!existed)
             {

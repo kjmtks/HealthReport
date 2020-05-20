@@ -104,6 +104,7 @@ FROM
         '' AS ""InfectedStringColumn8"",
         '' AS ""InfectedStringColumn9"",
         '' AS ""InfectedStringColumn10"",
+        '' AS ""InfectedStringColumn11"",
         0 AS ""MailIndex"",
         '' AS ""RawUserId"",
         '' AS ""RawUserName"",
@@ -154,6 +155,7 @@ FROM
           h.""InfectedStringColumn8"" AS ""InfectedStringColumn8"",
           h.""InfectedStringColumn9"" AS ""InfectedStringColumn9"",
           h.""InfectedStringColumn10"" AS ""InfectedStringColumn10"",
+          h.""InfectedStringColumn11"" AS ""InfectedStringColumn11"",
           h.""MailIndex"" AS ""MailIndex"",
           h.""RawUserId"" AS ""RawUserId"",
           h.""RawUserName"" AS ""RawUserName"",
@@ -184,7 +186,7 @@ FROM
   ON
     a.""StudentId"" = s.""Id"" AND a.""CourseId"" = {courseId}
   ORDER BY
-    h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"", h.""IsEmptyData""
+    h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"" DESC, h.""IsEmptyData""
 ) as h
 ");
             var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x)})").ToList();

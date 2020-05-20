@@ -56,6 +56,7 @@ namespace NCVC.App.Models
         public string InfectedStringColumn8 { get; set; }
         public string InfectedStringColumn9 { get; set; }
         public string InfectedStringColumn10 { get; set; }
+        public string InfectedStringColumn11 { get; set; }
 
 
         public int MailIndex { get; set; }

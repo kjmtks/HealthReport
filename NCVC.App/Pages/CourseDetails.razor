@@ -145,6 +145,7 @@
                                         <th class="single line">記録時間2</th>
                                         <th class="single line">体温2</th>
                                         <th class="single line">酸素飽和度2</th>
+                                        <th class="single line">表情</th>
                                         <th class="single line">せき</th>
                                         <th class="single line">息苦しさ</th>
                                         <th class="single line">体のだるさ</th>
@@ -200,7 +201,7 @@
                                             }
                                             else
                                             {
-                                                <td colspan="17">
+                                                <td colspan="18">
                                                     報告者IDが未登録のユーザー
                                                 </td>
                                             }
@@ -215,7 +216,7 @@
                                             }
                                             else
                                             {
-                                                <td colspan="17">
+                                                <td colspan="18">
                                                     未提出
                                                 </td>
                                             }
@@ -307,7 +308,7 @@
                                             {
                                                 if (!health.IsInfected)
                                                 {
-                                                    <td colspan="16">
+                                                    <td colspan="17">
                                                         非感染
                                                     </td>
                                                     <td>@health.UploadedAt.ToString()</td>
@@ -330,6 +331,7 @@
                                                     <td>@health.InfectedStringColumn8</td>
                                                     <td>@health.InfectedStringColumn9</td>
                                                     <td>@health.InfectedStringColumn10</td>
+                                                    <td>@health.InfectedStringColumn11</td>
                                                     <td>@health.UploadedAt.ToString()</td>
                                                 }
                                             }
