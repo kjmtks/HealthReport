@@ -141,7 +141,8 @@ namespace NCVC.App.Controllers
             {
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-                var hasTimeFrames = EV.GetTimeFrames().Count() > 0;
+                var tfs = EV.GetTimeFrames();
+                var hasTimeFrames = tfs != null ? EV.GetTimeFrames()?.Count() > 0 : false;
 
                 using (var w = new StreamWriter(ms, Encoding.GetEncoding("Shift_JIS")))
                 {
@@ -154,6 +155,7 @@ namespace NCVC.App.Controllers
                     w.Write("記録時刻2回目,");
                     w.Write("体温2回目,");
                     w.Write("酸素飽和度2回目,");
+                    w.Write("表情,");
                     w.Write("せき,");
                     w.Write("息苦しさ,");
                     w.Write("体のだるさ,");
@@ -206,6 +208,7 @@ namespace NCVC.App.Controllers
                             w.Write($"{health.InfectedStringColumn8},");
                             w.Write($"{health.InfectedStringColumn9},");
                             w.Write($"{health.InfectedStringColumn10},");
+                            w.Write($"{health.InfectedStringColumn11},");
                         }
                         w.WriteLine();
                     }
