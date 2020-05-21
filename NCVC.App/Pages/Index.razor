@@ -12,9 +12,18 @@
     @(Environment.GetEnvironmentVariable("TITLE"))
 </h1>
 
+<br />
+<br />
+<br />
+<br />
 
-<br />
-<br />
+<div class="content">
+    <div class="summary">
+        <i class="book icon"></i>
+        <a href="/manual">本システムの利用方法</a>
+    </div>
+</div>
+
 <br />
 <br />
 
@@ -23,6 +32,7 @@
         <CourseManager CssClass="ui content" IsAdmin='context.User.IsInRole("Admin")' />
     </Authorized>
 </AuthorizeView>
+
 
 <AuthorizeView Roles="Admin">
     <MailBoxManager CssClass="ui content" Collection="DB.Context.MailBoxes" />

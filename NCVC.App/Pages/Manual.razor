@@ -1,0 +1,179 @@
+﻿@page "/manual"
+
+
+<h1 class="ui aligned header">
+    本システムの利用方法
+</h1>
+
+<p>
+    本システムはスマホアプリ<a href="https://www.htech-lab.co.jp/covid19/">健康日記</a>から提出されたCSV添付メールを取得，データベース化し，表示するウェブシステムです．
+</p>
+
+<p>
+    本システムでは観察対象者のまとまりのことをグループと呼びます．グループ単位で提出された健康情報を任意の条件で絞り込み，閲覧することができます．
+</p>
+
+
+
+<h2 class="ui aligned header">
+    ホーム画面
+</h2>
+<p>
+    システムにログイン後，閲覧権限のあるグループの一覧が表示されます．
+    閲覧したいグループ名をクリックすることで，健康情報検索画面に遷移します．
+</p>
+
+<h2 class="ui aligned header">
+    健康情報検索画面
+</h2>
+<p>
+    健康情報検索画面では，対象のグループに属する観察対象者全員の，これまでに提出された健康情報を任意の条件で検索し，閲覧することができます．
+</p>
+<p>
+    ただし，検索にかかる処理時間を軽減するために，古い情報は表示されないように設定されている場合があります．
+    古い情報の表示が必要な場合は管理者に問い合わせて下さい．
+</p>
+
+<p>
+    本画面を開いた際に，観察対象者より提出されたメールの取り込み（最新情報に更新）を自動で行います．
+    蓄積された新規メールの量に応じて，この処理には時間がかかります．
+    "Please Wait..." と表示されている間は，そのまま画面を操作せずにお待ち下さい．
+</p>
+
+<p>
+    以下の画像の紫色の枠で示す領域にあるアイコンをクリックすることでもメールの取り込みを行うことができます．
+    <br />
+    <img src="/img/header-mail.png" /><br />
+</p>
+
+<p>
+    メールの取り込みが完了し，最新の情報に更新されると，本画面にあるテーブルに健康情報が一覧表示されます．
+    このとき，現在の年月日のデータのみが表示されるようになっています（グループによっては異なる場合があります）．
+</p>
+<p>
+    本画面にあるテーブルのヘッダには，検索条件を設定するための検索ボタンが複数個用意されています．
+    以下の画像の赤枠で示す領域に各検索ボタンが配置されています．
+
+    <br />
+    <img src="/img/header-buttons.png" /><br />
+    <br />
+
+    各ボタンの機能は以下の通りです(グループによっては異なるボタンが配置されている場合があります):
+    <ul>
+        <li>「リセット」は検索条件をリセットし，すべてのデータを表示させるようにするボタンです．</li>
+        <li>「異常あり」は体温が 37.5℃ 以上ある，または，異常症状があるデータのみに絞り込むためのボタンです．</li>
+        <li>「体温37.0℃以上」，「体温37.5℃以上」はそれぞれ，体温が 37.0℃, 37.5℃ 以上あるデータのみに絞り込むためのボタンです．</li>
+        <li>「直近4日」は3日前から今日までに測定されたデータのみに絞り込むためのボタンです．</li>
+        <li>「昨日」，「今日」はそれぞれ，1日前，現在の年月日に測定されたデータのみに絞り込むためのボタンです．</li>
+        <li>「先週」と「今週」はそれぞれ，先週と今週の1週間分(月曜日開始)のデータに絞り込むためのボタンです．</li>
+        <li>同様に，「先月」と「今月」はそれぞれ，先月と今月の1ヶ月分のデータに絞り込むためのボタンです．</li>
+        <li>「未提出」，「提出済み」はそれぞれ，提出されていないデータ，提出されたデータのみに絞り込むためのボタンです．</li>
+    </ul>
+
+    各ボタンは組み合わせることができます．
+    例えば，「異常あり」と「直近4日」をクリックすることで，直近4日間に異常症状があったデータのみを抽出することができます．
+
+    ただし，同種の項目に関する異なるボタンをクリックした場合は，後にクリックされたボタンのみが有効となります．
+    たとえば，「今日」，「先週」とクリックした場合には，「今日」の条件は削除され，後にクリックされた「先週」のみが有効となります．
+
+    検索条件が煩雑になってしまい，思うように絞り込みができない場合は，一度「リセット」をするのが簡単な対処方法です．
+
+    なお，以下の画像の青枠で示す領域に現在の検索条件が記載されています．
+
+    <br />
+    <img src="/img/header-expr.png" /><br />
+    <br />
+    ここに検索条件を直接記述し，Enterキーを押下することでも検索することができます（Enterキーを押下してから "Please wait..." が表示されるまでに少しラグがあります）．
+    文法は「検索条件式の文法」を参照して下さい．
+</p>
+
+<p>
+    以下の画像の緑色の枠で示す領域にあるアイコンをクリックすることで，現在抽出しているデータのみをCSV形式でダウンロードすることができます．
+    データを充分に絞り込んだ上で使用して下さい．
+    <br />
+    <img src="/img/header-csv.png" /><br />
+    <br />
+</p>
+
+<h2 class="ui aligned header">
+    検索条件式の文法
+</h2>
+<p>
+    本節の内容を理解しなくても，システムは利用できます．
+    より高度な条件で検索を行いたい場合に参照して下さい．
+</p>
+
+以下の文法で検索条件を記述できます．検索条件は <code>&&</code> またはカンマ区切りで，複数記述することができます．
+<p>
+    <ul>
+        <li>
+            観察対象番号: <code>user == "観察対象者番号"</code>, <code>user != "観察対象者番号"</code>, <code>user =* "観察対象者番号"</code>, <code>user *= "観察対象者番号"</code>
+            <ul>
+                <li><code>==</code>, <code>!=</code>: それぞれ，指定した観察対象者番号に一致する, 一致しない</li>
+                <li><code>=*</code>, <code>*=</code>: それぞれ，左辺が右辺に宇前方一致，後方一致</li>
+            </ul>
+        </li>
+        <li>
+            体温: <code>temp == 体温</code>, <code>temp != 体温</code>, <code>temp &gt;= 体温</code>, <code>temp &lt;= 体温</code>, <code>temp &gt; 体温</code>, <code>temp &lt; 体温</code>
+            <ul>
+                <li>体温は正の実数</li>
+            </ul>
+        </li>
+        <li>
+            測定年月日: <code>date == 年月日</code>, <code>date != 年月日</code>, <code>date &gt;= 年月日</code>, <code>date &lt;= 年月日</code>, <code>date &gt; 年月日</code>, <code>date &lt; 年月日</code>
+            <ul>
+                <li>
+                    年月日には以下が設定可能:
+                    <ul>
+                        <li><code>yyyy/MM/dd</code></li>
+                        <li><code>yyyy/MM/dd + n</code>: <code>yyyy/MM/dd</code> から n 日後の年月日</li>
+                        <li><code>yyyy/MM/dd - n</code>: <code>yyyy/MM/dd</code> から n 日前の年月日</li>
+                        <li><code>today</code>: 今日の年月日</li>
+                        <li><code>today + n</code>: 今日から n 日後の年月日</li>
+                        <li><code>today - n</code>: 今日から n 日前の年月日</li>
+                        <li><code>thisweek</code>: 直前の月曜日の年月日</li>
+                        <li><code>thisweek + n</code>: 直前の月曜日から n 日後の年月日</li>
+                        <li><code>thisweek - n</code>: 直前の月曜日から n 日前の年月日</li>
+                        <li><code>thismonth</code>: 当月 1 日の年月日</li>
+                        <li><code>thismonth + n</code>: 当月 1 日から n ヶ月後の年月日</li>
+                        <li><code>thismonth - n</code>: 当月 1 日から n ヶ月前の年月日</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li>
+            異常の有無: <cdde>error</cdde>, <code>!error</code>, <code>error == 真偽値</code>, <code>error != 真偽値</code>
+            <ul>
+                <li>真偽値は <cdde>true</cdde> または <code>false</code></li>
+            </ul>
+        </li>
+        <li>
+            提出されているか否か: <cdde>submitted</cdde>, <code>!submitted</code>, <code>submitted == 真偽値</code>, <code>submitted != 真偽値</code>
+        </li>
+    </ul>
+
+
+    構文の詳細は以下の通りです:
+    <code>
+        <pre>&lt;StringExpr&gt; ::= &lt;string&gt;
+               | "user" | "timeframe" | "tag"
+
+&lt;DecimalExpr&gt; ::= &lt;decimal&gt;
+                | "temp"
+                | "-" &lt;DecimalExpr&gt;
+                | &lt;DecimalExpr&gt; ("+" | "-" | "*" | "\") &lt;DecimalExpr&gt;
+
+&lt;DateExpr&gt; ::= &lt;date&gt;
+             | "date" | "today" | "thisweek" | "thismonth"
+             | &lt;DateExpr&gt; ("+" | "-") &lt;DecimalExpr&gt; | &lt;DecimalExpr&gt; ("+" | "-") &lt;DateExpr&gt;
+
+&lt;BooleanExpr&gt; ::= "true" | "false"
+                | "error" | "warning" | "submitted" | "infected"
+                | &lt;StringExpr&gt; ("==" | "!=" | "*=" | "=*" | "-&gt;") &lt;StringExpr&gt;
+                | &lt;DecimalExpr&gt; ("==" | "!=" | "&gt;" | "&gt;=" | "&lt;" | "&lt;=") &lt;DecimalExpr&gt;
+                | &lt;DateExpr&gt; ("==" | "!=" | "&gt;" | "&gt;=" | "&lt;" | "&lt;=") &lt;DateExpr&gt;
+                | &lt;BooleanExpr&gt; ("==" | "!=") &lt;BooleanExpr&gt;
+                | "!" &lt;BooleanExpr&gt;
+                | &lt;BooleanExpr&gt; ("&&" | "||" | "-&gt;") &lt;BooleanExpr&gt;</pre>
+    </code>
+</p>
