@@ -36,8 +36,8 @@
                 <thead>
                     <tr>
                         <th class="single line">観察対象者番号</th>
-                        <th class="single line">名前</th>
                         <th class="single line">報告者ID</th>
+                        <th class="single line">名前</th>
                         <th class="single line">タグ</th>
                         <th class="single line"></th>
                     </tr>
@@ -50,15 +50,15 @@
                             @student.Account
                         </td>
                         <td>
-                            @student.Name
-                        </td>
-                        <td>
                             @student.Hash
                         </td>
                         <td>
-                            @foreach(var tag in student.Tags?.Split(" ", StringSplitOptions.RemoveEmptyEntries) ?? new string[]{})
+                            @student.Name
+                        </td>
+                        <td>
+                            @foreach (var tag in student.Tags?.Split(" ", StringSplitOptions.RemoveEmptyEntries) ?? new string[] { })
                             {
-                            <div class="ui mini label">@tag</div>
+                                <div class="ui mini label">@tag</div>
                             }
                         </td>
                         <td class="right aligned">
