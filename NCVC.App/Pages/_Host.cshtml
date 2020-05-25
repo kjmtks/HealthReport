@@ -21,7 +21,8 @@
     <script src="node_modules/@@fortawesome/fontawesome-free/js/all.min.js"></script>
 
     <script>
-        function modalControl(target, action) { $(target).modal({closable: false}).modal(action); }
+        function modalControl(target, action) { $(target).modal({ closable: false }).modal(action); }
+        function confirmDialog(message) { return window.confirm(message); }
     </script>
     <style type="text/css">
 

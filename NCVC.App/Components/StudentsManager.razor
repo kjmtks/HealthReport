@@ -1,50 +1,51 @@
 ﻿@inject DatabaseService DB;
+@inject IJSRuntime JS;
 @inject AuthenticationStateProvider Auth;
 @using Microsoft.EntityFrameworkCore;
 @using NCVC.App.Components;
 @using NCVC.App.Models;
 
-    <div class="@CssClass">
-        <h2 class="ui header">
-            <i class="users icon"></i>
-            <div class="content">
-                観察対象者管理
-            </div>
-        </h2>
-
-        @if (!string.IsNullOrWhiteSpace(Message))
-        {
-            <div class="ui positive message">
-                <div class="ui header">@Subject</div>
-                <p>@Message</p>
-            </div>
-        }
-
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <div class="ui negative message">
-                <div class="ui header">@ErrorSubject</div>
-                <p>@ErrorMessage</p>
-            </div>
-        }
-
-        <div class="ui menu top attached">
-            <div class="item">登録済み 観察対象者</div>
+<div class="@CssClass">
+    <h2 class="ui header">
+        <i class="users icon"></i>
+        <div class="content">
+            観察対象者管理
         </div>
-        <Paginated Collection="@Students" @ref="@Pagination" CssClass="attached" EntriesPerPage="50">
-            <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
-                <thead>
-                    <tr>
-                        <th class="single line">観察対象者番号</th>
-                        <th class="single line">報告者ID</th>
-                        <th class="single line">名前</th>
-                        <th class="single line">タグ</th>
-                        <th class="single line"></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var student in Pagination.ShowedModels)
-                    {
+    </h2>
+
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <div class="ui positive message">
+            <div class="ui header">@Subject</div>
+            <p>@Message</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="ui negative message">
+            <div class="ui header">@ErrorSubject</div>
+            <p>@ErrorMessage</p>
+        </div>
+    }
+
+    <div class="ui menu top attached">
+        <div class="item">登録済み 観察対象者</div>
+    </div>
+    <Paginated Collection="@Students" @ref="@Pagination" CssClass="attached" EntriesPerPage="50">
+        <table class="ui very compact table @(Pagination.HasPagination ? "" : "bottom") attached">
+            <thead>
+                <tr>
+                    <th class="single line">観察対象者番号</th>
+                    <th class="single line">報告者ID</th>
+                    <th class="single line">名前</th>
+                    <th class="single line">タグ</th>
+                    <th class="single line"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Pagination.ShowedModels)
+                {
                     <tr>
                         <td>
                             @student.Account
@@ -65,36 +66,36 @@
                             <a class="ui red icon button" @onclick="() => RemoveAsync(student)"><i class="trash icon"></i></a>
                         </td>
                     </tr>
-                    }
-                </tbody>
-            </table>
-        </Paginated>
+                }
+            </tbody>
+        </table>
+    </Paginated>
 
-        <h3>登録・更新</h3>
+    <h3>登録・更新</h3>
 
-        <p>
-            追加または更新する観察対象者の情報を以下の様式に従って1行につき1名ずつ記述してください．
-            @if (useLdap)
-            {
-                <pre>観察対象者番号 報告者ID LDAP タグ(スペース区切り，任意)</pre>
-                <text>または</text>
-            }
-                <pre>観察対象者番号 報告者ID 名前 タグ(スペース区切り，任意)</pre>
-            @if (useLdap)
-            {
-                <text>前者の方法では，観察対象者の名前をLDAPから取得します．</text>
-            }
-        </p>
-        <div class="ui form">
-            <div class="field">
-                <textarea class="ui" @bind="List" rows="20"></textarea>
+    <p>
+        追加または更新する観察対象者の情報を以下の様式に従って1行につき1名ずつ記述してください．
+        @if (useLdap)
+        {
+            <pre>観察対象者番号 報告者ID LDAP タグ(スペース区切り，任意)</pre>
+            <text>または</text>
+        }
+        <pre>観察対象者番号 報告者ID 名前 タグ(スペース区切り，任意)</pre>
+        @if (useLdap)
+        {
+            <text>前者の方法では，観察対象者の名前をLDAPから取得します．</text>
+        }
+    </p>
+    <div class="ui form">
+        <div class="field">
+            <textarea class="ui" @bind="List" rows="20"></textarea>
 
-            </div>
-            <div class="actions">
-                <button @onclick="Update" type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
-            </div>
+        </div>
+        <div class="actions">
+            <button @onclick="Update" type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
         </div>
     </div>
+</div>
 
 @code
 {
@@ -194,6 +195,12 @@
     protected async Task RemoveAsync(Student model)
     {
         if (model == null) { return; }
+
+        if(!await JS.InvokeAsync<bool>("confirmDialog", new[] { "削除してもよろしいですか？" }))
+        {
+            return;
+        }
+
         var m = DB.Context.Students.Where(x => x.Id == model.Id).FirstOrDefault();
         if (m == null)
         {

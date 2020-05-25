@@ -229,6 +229,10 @@
     protected async Task RemoveAsync(MailBox model)
     {
         if (model == null) { return; }
+        if(!await JS.InvokeAsync<bool>("confirmDialog", new[] { "削除してもよろしいですか？" }))
+        {
+            return;
+        }
         var m = model.GetEntityForEditOrRemove(DB.Context, Config);
         if (m == null)
         {
