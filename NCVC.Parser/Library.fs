@@ -278,15 +278,15 @@ module QueryParser =
 
 
 
-    let BooleanExprToPgsqlExprString (expr : BooleanExpr) : string =
+    let BooleanExprToPgsqlExprString (expr : BooleanExpr) (isInfected : bool) : string =
         let rec _booleanAtom (atom : BooleanAtom) =
             match atom with
             | BooleanAtom.True -> "TRUE"
             | BooleanAtom.False -> "FALSE"
             | BooleanAtom.IsInfected -> @"h.""IsInfected"""
             | BooleanAtom.IsSubmitted -> @"(NOT h.""IsEmptyData"")"
-            | BooleanAtom.HasError -> @"h.""HasError"""
-            | BooleanAtom.HasWarning -> @"h.""HasWarning"""
+            | BooleanAtom.HasError -> if isInfected then @"h.""HasInfectedError""" else @"h.""HasError"""
+            | BooleanAtom.HasWarning -> if isInfected then @"h.""HasInfectedWarning""" else @"h.""HasWarning"""
             | BooleanAtom.SEq (lhs, rhs) -> sprintf "(%s = %s)" (_stringExpr lhs) (_stringExpr rhs)
             | BooleanAtom.SNe (lhs, rhs) -> sprintf "(%s <> %s)" (_stringExpr lhs) (_stringExpr rhs)
             | BooleanAtom.SStartWith (lhs, rhs) ->
@@ -324,7 +324,8 @@ module QueryParser =
             | StringAtom.StringLiteral literal -> sprintf "'%s'" (literal.Replace("'", "''"))
         and _decimalAtom (atom : DecimalAtom) : string =
             match atom with
-            | DecimalAtom.BodyTemperature -> @"h.""BodyTemperature"""
+            | DecimalAtom.BodyTemperature ->
+                if isInfected then @"h.""MaxInfectedBodyTemperature""" else @"h.""BodyTemperature"""
             | DecimalAtom.DecimalLiteral literal -> literal.ToString()
         and _dateAtom (atom : DateAtom) : (string * DateTimeSpan) =
             match atom with

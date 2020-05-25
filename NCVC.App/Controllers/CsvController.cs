@@ -46,7 +46,7 @@ namespace NCVC.App.Controllers
                 return new NotFoundResult();
             }
 
-            var (count, list) = Health.Search(DB.Context, EV, course.Id, filterString ?? "");
+            var (count, list) = Health.Search(DB.Context, false, EV, course.Id, filterString ?? "");
             byte[] result;
             using (var ms = new MemoryStream())
             {
@@ -135,7 +135,7 @@ namespace NCVC.App.Controllers
                 return new NotFoundResult();
             }
 
-            var (count, list) = Health.Search(DB.Context, EV, course.Id, filterString ?? "");
+            var (count, list) = Health.Search(DB.Context, true, EV, course.Id, filterString ?? "");
             byte[] result;
             using (var ms = new MemoryStream())
             {

@@ -37,7 +37,7 @@ namespace NCVC.App.Models
             return rs;
         }
 
-        public (int, IQueryable<Health>) Filtering(DatabaseContext context, int courseId, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        public (int, IQueryable<Health>) Filtering(DatabaseContext context, bool isInfected, int courseId, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (query == null)
             {
@@ -47,14 +47,14 @@ namespace NCVC.App.Models
             {
                 timeframes = new TimeFrame[] { };
             }
-            var sql_for_count  = buildSql(courseId, @"h.""Id""", timeframes, startDate, numOfDaysToSearch);
-            var sql_for_search = buildSql(courseId, "*", timeframes, startDate, numOfDaysToSearch);
+            var sql_for_count  = buildSql(isInfected, courseId, @"h.""Id""", timeframes, startDate, numOfDaysToSearch);
+            var sql_for_search = buildSql(isInfected, courseId, "*", timeframes, startDate, numOfDaysToSearch);
             var count = context.HealthList.FromSqlRaw(sql_for_count).AsNoTracking().Count();
             // Console.WriteLine(sql_for_search);
             return (count, Sort(context.HealthList.FromSqlRaw(sql_for_search).Include(x => x.Student)).AsNoTracking());
         }
 
-        private string buildSql(int courseId, string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
+        private string buildSql(bool isInfected, int courseId, string columns, IEnumerable<TimeFrame> timeframes, DateTime startDate, int? numOfDaysToSearch = null)
         {
             if (numOfDaysToSearch.HasValue)
             {
@@ -88,6 +88,10 @@ FROM
         u.""Id"" AS ""StudentId"",
         FALSE AS ""HasError"",
         FALSE AS ""HasWarning"",
+        FALSE AS ""HasInfectedError"",
+        FALSE AS ""HasInfectedWarning"",
+        0 AS ""MaxInfectedBodyTemperature"",
+        999 AS ""MinInfectedOxygenSaturation"",
         0 AS ""InfectedBodyTemperature1"",
         0 AS ""InfectedBodyTemperature2"",
         '00:00:00' AS ""InfectedMeasuredTime1"",
@@ -139,6 +143,10 @@ FROM
           h.""StudentId"" AS ""StudentId"",
           h.""HasError"" AS ""HasError"",
           h.""HasWarning"" AS ""HasWarning"",
+          h.""HasInfectedError"" AS ""HasInfectedError"",
+          h.""HasInfectedWarning"" AS ""HasInfectedWarning"",
+          h.""MaxInfectedBodyTemperature"" AS ""MaxInfectedBodyTemperature"",
+          h.""MinInfectedOxygenSaturation"" AS ""MinInfectedOxygenSaturation"",
           h.""InfectedBodyTemperature1"" AS ""InfectedBodyTemperature1"",
           h.""InfectedBodyTemperature2"" AS ""InfectedBodyTemperature2"",
           h.""InfectedMeasuredTime1"" AS ""InfectedMeasuredTime1"",
@@ -189,7 +197,7 @@ FROM
     h.""MeasuredAt"", h.""TimeFrame"", h.""StudentId"", h.""IsInfected"" DESC, h.""IsEmptyData""
 ) as h
 ");
-            var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x)})").ToList();
+            var conditions = query.Value.Item1.Select(x => $"({QueryParser.BooleanExprToPgsqlExprString(x, isInfected)})").ToList();
             // var conditions = query.Value.Item1.Select(x => $"({toSqlBooleanExpr(x)})").ToList();
             if (numOfDaysToSearch.HasValue)
             {

@@ -44,8 +44,10 @@ namespace NCVC.App.Models
         public TimeSpan InfectedMeasuredTime2 { get; set; }
         public decimal InfectedBodyTemperature1 { get; set; }
         public decimal InfectedBodyTemperature2 { get; set; }
+        public decimal MaxInfectedBodyTemperature { get; set; }
         public int InfectedOxygenSaturation1 { get; set; }
         public int InfectedOxygenSaturation2 { get; set; }
+        public int MinInfectedOxygenSaturation { get; set; }
         public string InfectedStringColumn1 { get; set; }
         public string InfectedStringColumn2 { get; set; }
         public string InfectedStringColumn3 { get; set; }
@@ -68,6 +70,8 @@ namespace NCVC.App.Models
 
         public bool HasError { get; set; } = false;
         public bool HasWarning { get; set; } = false;
+        public bool HasInfectedError { get; set; } = false;
+        public bool HasInfectedWarning { get; set; } = false;
 
         public bool IsWrongBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37.5;
         public bool IsWarnBodyTemperature() => !IsEmptyData && BodyTemperature >= (decimal)37;
@@ -97,6 +101,44 @@ namespace NCVC.App.Models
             | IsWrongStringColumn10()
             | IsWrongStringColumn11()
             | IsWrongStringColumn12();
+
+
+
+        public bool IsWrongInfectedBodyTemperature1() => !(IsEmptyData || InfectedBodyTemperature1 == 0) && InfectedBodyTemperature1 >= (decimal)37.5;
+        public bool IsWarnInfectedBodyTemperature1() => !(IsEmptyData || InfectedBodyTemperature1 == 0) && InfectedBodyTemperature1 >= (decimal)37;
+        public bool IsWrongInfectedOxygenSaturation1() => !(IsEmptyData || InfectedOxygenSaturation1 <= 0) && InfectedOxygenSaturation1 <= (decimal)95;
+        public bool IsWrongInfectedBodyTemperature2() => !(IsEmptyData || InfectedBodyTemperature2 == 0) && InfectedBodyTemperature2 >= (decimal)37.5;
+        public bool IsWarnInfectedBodyTemperature2() => !(IsEmptyData || InfectedBodyTemperature2 == 0) && InfectedBodyTemperature2 >= (decimal)37;
+        public bool IsWrongInfectedOxygenSaturation2() => !(IsEmptyData || InfectedOxygenSaturation2 <= 0) && InfectedOxygenSaturation2 <= (decimal)95;
+        public bool IsWrongStringInfectedColumn1() => !IsEmptyData && InfectedStringColumn1 != "いいえ";
+        public bool IsWrongStringInfectedColumn2() => !IsEmptyData && InfectedStringColumn2 != "いいえ";
+        public bool IsWrongStringInfectedColumn3() => !IsEmptyData && InfectedStringColumn3 != "いいえ";
+        public bool IsWrongStringInfectedColumn4() => !IsEmptyData && InfectedStringColumn4 != "いいえ";
+        public bool IsWrongStringInfectedColumn5() => !IsEmptyData && InfectedStringColumn5 != "いいえ";
+        public bool IsWrongStringInfectedColumn6() => !IsEmptyData && InfectedStringColumn6 != "いいえ";
+        public bool IsWrongStringInfectedColumn7() => !IsEmptyData && InfectedStringColumn7 != "いいえ";
+        public bool IsWrongStringInfectedColumn8() => !IsEmptyData && InfectedStringColumn8 != "いいえ";
+        public bool IsWrongStringInfectedColumn9() => !IsEmptyData && InfectedStringColumn9 != "いいえ";
+        public bool IsWrongStringInfectedColumn10() => !IsEmptyData && InfectedStringColumn10 != "いいえ";
+        public bool IsWrongStringInfectedColumn11() => !IsEmptyData && !string.IsNullOrWhiteSpace(InfectedStringColumn11);
+        public bool HasWarnInfectedValue() => (IsWarnInfectedBodyTemperature1() || IsWarnInfectedBodyTemperature2()) && !HasWrongInfectedValue();
+        public bool HasWrongInfectedValue() =>
+              IsWrongInfectedBodyTemperature1()
+            | IsWrongInfectedOxygenSaturation1()
+            | IsWrongInfectedBodyTemperature2()
+            | IsWrongInfectedOxygenSaturation2()
+            | IsWrongStringInfectedColumn1()
+            | IsWrongStringInfectedColumn2()
+            | IsWrongStringInfectedColumn3()
+            | IsWrongStringInfectedColumn4()
+            | IsWrongStringInfectedColumn5()
+            | IsWrongStringInfectedColumn6()
+            | IsWrongStringInfectedColumn7()
+            | IsWrongStringInfectedColumn8()
+            | IsWrongStringInfectedColumn9()
+            | IsWrongStringInfectedColumn10()
+            | IsWrongStringInfectedColumn11();
+
 
 
         public static IEnumerable<Student> UnsubmittedStudents(DatabaseContext context, int courseId, DateTime date, TimeFrame timeframe = null)
@@ -209,13 +251,13 @@ namespace NCVC.App.Models
             }
         }
 
-        public static (int, IQueryable<Health>) Search(DatabaseContext context, EnvironmentVariableService ev, int courseId, string filterString, int? page = null, int? numPerPage = null)
+        public static (int, IQueryable<Health>) Search(DatabaseContext context, bool isInfected, EnvironmentVariableService ev, int courseId, string filterString, int? page = null, int? numPerPage = null)
         {
             var course = context.Courses.Include(x => x.StudentAssignments).ThenInclude(x => x.Student).Where(x => x.Id == courseId).FirstOrDefault();
             var students = course.StudentAssignments.Select(x => x.Student.Account);
 
             var fc = new FilterCompiler(filterString);
-            return fc.Filtering(context, courseId, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
+            return fc.Filtering(context, isInfected, courseId, ev.GetTimeFrames(), course.StartDate, course.NumOfDaysToSearch);
         }
     }
 }

@@ -258,6 +258,11 @@ namespace NCVC.App.Services
                 health.InfectedStringColumn9 = row[17].Trim();
                 health.InfectedStringColumn10 = row[18].Trim();
                 health.InfectedStringColumn11 = row[19].Trim();
+
+                health.MaxInfectedBodyTemperature = Math.Max(health.InfectedBodyTemperature1, health.InfectedBodyTemperature2);
+                health.MinInfectedOxygenSaturation = Math.Min(health.InfectedOxygenSaturation1, health.InfectedOxygenSaturation2);
+                health.HasInfectedError = health.HasWrongInfectedValue();
+                health.HasInfectedWarning = health.HasWarnInfectedValue();
             }
             if (!existed)
             {

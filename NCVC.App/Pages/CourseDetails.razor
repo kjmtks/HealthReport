@@ -193,162 +193,293 @@
                                             }
                                         }
                                     }
-                                    <tr class="@style">
-                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetDateAsync(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
-                                        @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
-                                        {
-                                            <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
-                                        }
-                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
-                                        <td>@health.Student.Name</td>
+                                <tr class="@style">
+                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetDateAsync(health.MeasuredAt); }">@health.MeasuredAt.ToShortDateString()</a></td>
+                                    @if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TIMEFRAME")))
+                                    {
+                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
+                                    }
+                                    <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
+                                    <td>@health.Student.Name</td>
 
-                                        @if (string.IsNullOrWhiteSpace(health.Student.Hash))
+                                    @if (string.IsNullOrWhiteSpace(health.Student.Hash))
+                                    {
+                                        if (!ShowInfected)
                                         {
-                                            if (!ShowInfected)
-                                            {
-                                                <td colspan="14">
-                                                    報告者IDが未登録のユーザー
-                                                </td>
-                                            }
-                                            else
-                                            {
-                                                <td colspan="18">
-                                                    報告者IDが未登録のユーザー
-                                                </td>
-                                            }
+                                            <td colspan="14">
+                                                報告者IDが未登録のユーザー
+                                            </td>
                                         }
-                                        else if (health.IsEmptyData)
+                                        else
                                         {
-                                            if (!ShowInfected)
+                                            <td colspan="18">
+                                                報告者IDが未登録のユーザー
+                                            </td>
+                                        }
+                                    }
+                                    else if (health.IsEmptyData)
+                                    {
+                                        if (!ShowInfected)
+                                        {
+                                            <td colspan="14">
+                                                未提出
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td colspan="18">
+                                                未提出
+                                            </td>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!ShowInfected)
+                                        {
+                                            if (health.IsInfected)
                                             {
-                                                <td colspan="14">
-                                                    未提出
+                                                <td colspan="13">
+                                                    <i class="attention icon"></i>感染中
                                                 </td>
+                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                             else
                                             {
-                                                <td colspan="18">
-                                                    未提出
+                                                <td>
+                                                    @if (health.IsWrongBodyTemperature())
+                                                    {<i class="attention icon"></i> }
+                                                    else if (health.IsWarnBodyTemperature())
+                                                    { <i class="exclamation triangle icon"></i>}
+                                                    @health.BodyTemperature
                                                 </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn1())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn1
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn2())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn2
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn3())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn3
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn4())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn4
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn5())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn5
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn6())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn6
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn7())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn7
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn8())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn8
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn9())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn9
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn10())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn10
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn11())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn11
+                                                </td>
+                                                <td>
+                                                    @if (health.IsWrongStringColumn12())
+                                                    {<i class="attention icon"></i>}
+                                                    @health.StringColumn12
+                                                </td>
+                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                         }
                                         else
                                         {
-                                            if (!ShowInfected)
+                                            if (!health.IsInfected)
                                             {
-                                                if (health.IsInfected)
-                                                {
-                                                    <td colspan="13">
-                                                        <i class="attention icon"></i>感染中
-                                                    </td>
-                                                    <td>@health.UploadedAt.ToString()</td>
-                                                }
-                                                else
-                                                {
-                                                    <td>
-                                                        @if (health.IsWrongBodyTemperature())
-                                                        {<i class="attention icon"></i> }
-                                                        else if (health.IsWarnBodyTemperature())
-                                                        { <i class="exclamation triangle icon"></i>}
-                                                        @health.BodyTemperature
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn1())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn1
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn2())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn2
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn3())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn3
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn4())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn4
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn5())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn5
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn6())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn6
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn7())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn7
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn8())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn8
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn9())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn9
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn10())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn10
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn11())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn11
-                                                    </td>
-                                                    <td>
-                                                        @if (health.IsWrongStringColumn12())
-                                                        {<i class="attention icon"></i>}
-                                                        @health.StringColumn12
-                                                    </td>
-                                                    <td>@health.UploadedAt.ToString()</td>
-                                                }
+                                                <td colspan="17">
+                                                    非感染
+                                                </td>
+                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                             else
                                             {
-                                                if (!health.IsInfected)
+                                                <td>@(health.InfectedBodyTemperature1 <= 0 ? "" : health.InfectedMeasuredTime1.ToString(@"hh\:mm"))</td>
+                                                @if (health.InfectedBodyTemperature1 == 0)
                                                 {
-                                                    <td colspan="17">
-                                                        非感染
-                                                    </td>
-                                                    <td>@health.UploadedAt.ToString()</td>
+                                                    <td></td>
+                                                }
+                                                else if (health.InfectedBodyTemperature1 >= 37.5M)
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedBodyTemperature1</td>
+                                                }
+                                                else if (health.InfectedBodyTemperature1 >= 37M)
+                                                {
+                                                    <td class="warning"><i class="exclamation triangle icon"></i>@health.InfectedBodyTemperature1</td>
                                                 }
                                                 else
                                                 {
-                                                    <td>@health.InfectedMeasuredTime1</td>
                                                     <td>@health.InfectedBodyTemperature1</td>
-                                                    <td>@(health.InfectedOxygenSaturation1 < 0 ? "" : health.InfectedOxygenSaturation1.ToString())</td>
-                                                    <td>@health.InfectedMeasuredTime2</td>
-                                                    <td>@health.InfectedBodyTemperature2</td>
-                                                    <td>@(health.InfectedOxygenSaturation2 < 0 ? "" : health.InfectedOxygenSaturation2.ToString())</td>
-                                                    <td>@health.InfectedStringColumn1</td>
-                                                    <td>@health.InfectedStringColumn2</td>
-                                                    <td>@health.InfectedStringColumn3</td>
-                                                    <td>@health.InfectedStringColumn4</td>
-                                                    <td>@health.InfectedStringColumn5</td>
-                                                    <td>@health.InfectedStringColumn6</td>
-                                                    <td>@health.InfectedStringColumn7</td>
-                                                    <td>@health.InfectedStringColumn8</td>
-                                                    <td>@health.InfectedStringColumn9</td>
-                                                    <td>@health.InfectedStringColumn10</td>
-                                                    <td>@health.InfectedStringColumn11</td>
-                                                    <td>@health.UploadedAt.ToString()</td>
                                                 }
+                                                @if (health.InfectedOxygenSaturation1 <= 0)
+                                                {
+                                                    <td></td>
+                                                }
+                                                else if (health.InfectedOxygenSaturation1 > 95M)
+                                                {
+                                                    <td>@health.InfectedOxygenSaturation1</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedOxygenSaturation1.ToString()</td>
+                                                }
+
+                                                <td>@(health.InfectedBodyTemperature2 <= 0 ? "" : health.InfectedMeasuredTime2.ToString(@"hh\:mm"))</td>
+                                                @if (health.InfectedBodyTemperature2 == 0)
+                                                {
+                                                    <td></td>
+                                                }
+                                                else if (health.InfectedBodyTemperature2 >= 37.5M)
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedBodyTemperature2</td>
+                                                }
+                                                else if (health.InfectedBodyTemperature2 >= 37M)
+                                                {
+                                                    <td class="warning"><i class="exclamation triangle icon"></i>@health.InfectedBodyTemperature2</td>
+                                                }
+                                                else
+                                                {
+                                                    <td>@health.InfectedBodyTemperature2</td>
+                                                }
+                                                @if (health.InfectedOxygenSaturation2 <= 0)
+                                                {
+                                                    <td></td>
+                                                }
+                                                else if (health.InfectedOxygenSaturation2 > 95M)
+                                                {
+                                                    <td>@health.InfectedOxygenSaturation2</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedOxygenSaturation2.ToString()</td>
+                                                }
+
+                                                @if (health.InfectedStringColumn1 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn1</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn1</td>
+                                                }
+                                                @if (health.InfectedStringColumn2 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn2</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn2</td>
+                                                }
+                                                @if (health.InfectedStringColumn3 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn3</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn3</td>
+                                                }
+                                                @if (health.InfectedStringColumn4 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn4</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn4</td>
+                                                }
+                                                @if (health.InfectedStringColumn5 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn5</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn5</td>
+                                                }
+                                                @if (health.InfectedStringColumn6 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn6</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn6</td>
+                                                }
+                                                @if (health.InfectedStringColumn7 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn7</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn7</td>
+                                                }
+                                                @if (health.InfectedStringColumn8 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn8</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn8</td>
+                                                }
+                                                @if (health.InfectedStringColumn9 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn9</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn9</td>
+                                                }
+                                                @if (health.InfectedStringColumn10 == "いいえ")
+                                                {
+                                                    <td>@health.InfectedStringColumn10</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn10</td>
+                                                }
+                                                @if (string.IsNullOrWhiteSpace(health.InfectedStringColumn11))
+                                                {
+                                                    <td>@health.InfectedStringColumn11</td>
+                                                }
+                                                else
+                                                {
+                                                    <td class="negative"><i class="attention icon"></i>@health.InfectedStringColumn11</td>
+                                                }
+                                                <td>@health.UploadedAt.ToString()</td>
                                             }
                                         }
+                                    }
 
-                                    </tr>
+                                </tr>
                                 }
                             </tbody>
                         </table>
@@ -647,7 +778,7 @@
                     else
                     {
                         ErrorMessage = "";
-                        (Count, HealthQuery) = Health.Search(DB.Context, EV, Course.Id, filterString);
+                        (Count, HealthQuery) = Health.Search(DB.Context, ShowInfected, EV, Course.Id, filterString);
                     }
                     PageNumber = 1;
                     UpdatePagination();
