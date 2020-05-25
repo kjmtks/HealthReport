@@ -13,6 +13,17 @@
 
 <AuthorizeView Roles="Staff">
     <Authorized>
+
+        <div class="content">
+            <div class="summary">
+                <i class="book icon"></i>
+                <a href="/manual">本システムの利用方法</a>
+            </div>
+        </div>
+
+        <br />
+        <br />
+
         @if (Allowed)
         {
 
@@ -191,7 +202,7 @@
                                         <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
                                         <td>@health.Student.Name</td>
 
-                                        @if(string.IsNullOrWhiteSpace(health.Student.Hash))
+                                        @if (string.IsNullOrWhiteSpace(health.Student.Hash))
                                         {
                                             if (!ShowInfected)
                                             {
