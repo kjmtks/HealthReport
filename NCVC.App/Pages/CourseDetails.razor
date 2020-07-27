@@ -530,7 +530,7 @@
             </div>
 
             <div class="ui modal" id="modal-mail-detail">
-                <div class="header">メール詳細: @MailDetailSubject</div>
+                <div class="header">@MailDetailSubject</div>
                 <div class="content">
                     <textarea style="height: 40em; width: 100%; font-family: Courier New, Courier, monospace">@MailDetailText</textarea>
                 </div>
@@ -583,7 +583,7 @@
     {
         Processing = true;
         var (msg, text) = await CSV.FetchMailInfo(health);
-        this.MailDetailSubject = $"{health.Student.Name}({health.Student.Account}) {health.UploadedAt.ToString()}, {Course.MailBox.EmailAddress}, {health.Student.Hash}";
+        this.MailDetailSubject = $"{health.Student.Hash}: {health.Student.Name}({health.Student.Account})";
         this.MailDetailText = text;
         Processing = false;
         await JS.InvokeVoidAsync("modalControl", $".ui.modal#modal-mail-detail", "show");
