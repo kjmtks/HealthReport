@@ -23,6 +23,58 @@ namespace NCVC.App.Services
             EnvironmentVariable = environmentVariable;
         }
 
+        public async Task<(MimeMessage, string)> FetchMailInfo(Health health)
+        {
+            var mailbox = Context.MailBoxes.Where(x => x.Id == health.MailBoxId).FirstOrDefault();
+            if (mailbox == null)
+            {
+                return (null, "未対応");
+            }
+            using (var client = new ImapClient())
+            {
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                client.AuthenticationMechanisms.Remove("XOAUTH2");
+                var secureSocketOption = mailbox.SecurityMode switch
+                {
+                    "ssl" => SecureSocketOptions.SslOnConnect,
+                    "tls" => SecureSocketOptions.StartTls,
+                    "none" => SecureSocketOptions.None,
+                    _ => SecureSocketOptions.Auto,
+                };
+                client.Connect(mailbox.ImapHost, mailbox.ImapPort, secureSocketOption);
+                client.Authenticate(mailbox.ImapMailUserAccount, mailbox.ImapMailUserPassword);
+
+                var inbox = client.Inbox;
+                inbox.Open(FolderAccess.ReadOnly);
+                IList<IMessageSummary> messages;
+                messages = await inbox.FetchAsync(health.MailIndex, health.MailIndex, MessageSummaryItems.Envelope);
+                var msg = messages.FirstOrDefault();
+                if (msg == null) return (null, null);
+
+                var mime = await inbox.GetMessageAsync(msg.Index);
+                var attachments = getAttachments(mime);
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("Header:");
+                sb.AppendLine(mime.ToString());
+                sb.AppendLine("------------------------------------------------");
+                sb.AppendLine("Body:");
+                sb.AppendLine(mime.TextBody);
+                sb.AppendLine("------------------------------------------------");
+                foreach (var (filename, mem) in attachments)
+                {
+                    sb.AppendLine($"Attachment '{filename}':");
+                    using (var r = new System.IO.StreamReader(mem, System.Text.Encoding.GetEncoding("Shift_JIS")))
+                    {
+                        sb.AppendLine(r.ReadToEnd());
+                    }
+                    sb.AppendLine("------------------------------------------------");
+                }
+                return (mime, sb.ToString());
+            }
+        }
+
+
         public async Task<(int, int, int, int)> PullCsv(Staff staff, MailBox mailbox, int? index = null)
         {
             int count = 0;

@@ -62,6 +62,7 @@ namespace NCVC.App.Models
 
 
         public int MailIndex { get; set; }
+        public int? MailBoxId { get; set; }
 
         public int StudentId { get; set; }
         public virtual Student Student { get; set; }
