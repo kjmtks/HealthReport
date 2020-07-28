@@ -223,6 +223,7 @@ namespace NCVC.App.Services
                     UploadedAt = received_at,
                     Student = student,
                     MailIndex = msg_index,
+                    MailBoxId = mailbox.Id,
                     IsInfected = isInfected,
                     IsEmptyData = false
                 };
@@ -235,6 +236,7 @@ namespace NCVC.App.Services
                 health.UploadedAt = received_at;
                 health.Student = student;
                 health.MailIndex = msg_index;
+                health.MailBoxId = mailbox.Id;
                 health.IsInfected = isInfected;
                 health.IsEmptyData = false;
             }
