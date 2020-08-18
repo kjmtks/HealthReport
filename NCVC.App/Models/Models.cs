@@ -286,7 +286,8 @@ namespace NCVC.App.Models
             return authenticator.Authenticate(account, password);
         }
 
-        public static string FindStudentNameByLdap(string account, string search_user_account, string search_user_password)
+
+        public static IEnumerable<string> FindStudentNamesByLdap(IEnumerable<(string, string)> account_and_names, string search_user_account, string search_user_password)
         {
             var ldap_host = Environment.GetEnvironmentVariable("LDAP_HOST");
             var ldap_port = int.Parse(Environment.GetEnvironmentVariable("LDAP_PORT"));
@@ -311,8 +312,9 @@ namespace NCVC.App.Models
                     return attrs.getAttribute(xs[0], xs[1]).StringValue;
                 }
             });
-            return authenticator.FindName(account, search_user_account, search_user_password);
+            return authenticator.FindNames(account_and_names, search_user_account, search_user_password);
         }
+
 
 
         public Student GetEntityForEditOrRemove(DatabaseContext context, IConfiguration config) =>

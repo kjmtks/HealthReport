@@ -133,48 +133,42 @@
 
             var saccount = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_ACCOUNT");
             var spassword = Environment.GetEnvironmentVariable("LDAP_SEARCH_USER_PASSWORD");
-            foreach (var entry in List.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Split(new string[] { " ", "\t" }, 4, StringSplitOptions.RemoveEmptyEntries)))
+            var entries = List.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Split(new string[] { " ", "\t" }, 4, StringSplitOptions.RemoveEmptyEntries))
+                .Where(x => x.Count() >= 3)
+                .Select(x => (x[0].Trim(), x[1].Trim(), x[2].Trim(), x.Count() >= 4 ? x[3].Trim() : "") );
+            var names = useLdap ? Student.FindStudentNamesByLdap(entries.Select(x => (x.Item1, x.Item3)), saccount, spassword) : entries.Select(x => x.Item3);
+            foreach (var (account, hash, name, tags) in entries.Zip(names, (entry, name) => (entry.Item1, entry.Item2, name, entry.Item4)))
             {
-                if (entry.Count() >= 3)
+                if (name == null)
                 {
-                    var account = entry[0].Trim();
-                    var hash = entry[1].Trim();
-                    var name = entry[2].Trim();
-                    var tags = entry.Count() >= 4 ? entry[3].Trim() : "";
-                    if (useLdap && name.ToLower() == "ldap")
-                    {
-                        name = Student.FindStudentNameByLdap(account, saccount, spassword);
-                        if (name == null)
-                        {
-                            Message += $"Who {account}?; ";
-                            StateHasChanged();
-                            continue;
-                        }
-                    }
+                    Message += $"Who {account}?; ";
+                    StateHasChanged();
+                    continue;
+                }
 
-                    var existedStudent = previous.Where(x => x.Account == account).FirstOrDefault();
-                    if (existedStudent == null)
+                var existedStudent = previous.Where(x => x.Account == account).FirstOrDefault();
+                if (existedStudent == null)
+                {
+                    var newStudent = new Student()
                     {
-                        var newStudent = new Student()
-                        {
-                            Account = account,
-                            Hash = hash,
-                            Name = name,
-                            Tags = tags
-                        };
-                        DB.Context.Students.Add(newStudent);
-                        Message += $"Add {account}; ";
-                        StateHasChanged();
-                    }
-                    else
-                    {
-                        existedStudent.Name = name;
-                        existedStudent.Hash = hash;
-                        existedStudent.Tags = tags;
-                        DB.Context.Students.Update(existedStudent);
-                        Message += $"Update {account}({name}); ";
-                        StateHasChanged();
-                    }
+                        Account = account,
+                        Hash = hash,
+                        Name = name,
+                        Tags = tags
+                    };
+                    DB.Context.Students.Add(newStudent);
+                    Message += $"Add {account}; ";
+                    StateHasChanged();
+                }
+                else
+                {
+                    existedStudent.Name = name;
+                    existedStudent.Hash = hash;
+                    existedStudent.Tags = tags;
+                    DB.Context.Students.Update(existedStudent);
+                    Message += $"Update {account}({name}); ";
+                    StateHasChanged();
                 }
             }
             DB.Context.SaveChanges();
@@ -191,6 +185,7 @@
         }
         List = "";
     }
+
 
     protected async Task RemoveAsync(Student model)
     {

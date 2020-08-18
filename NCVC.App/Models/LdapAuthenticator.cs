@@ -25,7 +25,7 @@ namespace NCVC.App.Models
             this.getName = getName;
         }
 
-        public string FindName(string account, string search_user_account, string search_user_password)
+        public IEnumerable<string> FindNames(IEnumerable<(string, string)> account_and_names, string search_user_account, string search_user_password)
         {
             var lc = new LdapConnection();
             lc.UserDefinedServerCertValidationDelegate += (sender, certificate, chain, sslPolicyErrors) => true;  // Ignore cert. error
@@ -34,10 +34,24 @@ namespace NCVC.App.Models
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls13;
                 lc.SecureSocketLayer = true;
                 lc.Connect(this.host, this.port);
-                var dn = string.Format("{0}={1},{2}", this.id, account, this.basestr);
                 lc.Bind(LdapConnection.Ldap_V3, string.Format("{0}={1},{2}", this.id, search_user_account, this.basestr), search_user_password);
 
-                return getName(lc.Read(dn));
+                var results = new List<string>();
+                foreach(var (account, name) in account_and_names)
+                {
+                    if(name.ToLower() == "ldap")
+                    {
+                        var dn = string.Format("{0}={1},{2}", this.id, account, this.basestr);
+                        results.Add(getName(lc.Read(dn)));
+                    }
+                    else
+                    {
+                        results.Add(name);
+                    }
+                }
+
+                lc.Disconnect();
+                return results;
             }
             catch
             {
