@@ -2,6 +2,7 @@
 @inject DatabaseService DB;
 @inject AuthenticationStateProvider Auth;
 @using Microsoft.EntityFrameworkCore;
+@using Microsoft.Extensions.Configuration;
 @using NCVC.App.Components;
 @using NCVC.App.Models;
 @using System.Web;
@@ -10,6 +11,8 @@
 @inject NCVC.App.Services.EnvironmentVariableService EV;
 @inject CsvService CSV;
 @inject IJSRuntime JS;
+@inject DatabaseService DB;
+@inject IConfiguration Config;
 @implements IDisposable;
 
 <AuthorizeView Roles="Staff">
@@ -30,10 +33,9 @@
 
             <div class="ui basic segment">
                 <h2 class="ui header">
-                    <div class="content">
-                        @Course.Name
-                    </div>
+                    @Course.Name
                 </h2>
+                <ErrorMessageComponent Subject="@FormErrorSubject" ErrorMessage="@FormErrorMessage" />
 
                 <div class="ui basic segment">
                     <div class="ui @(Processing ? "active" : "disabled") inverted dimmer">
@@ -201,7 +203,10 @@
                                         {
                                             <td><a href="javascript:void(0);" @onclick="async () => { await SetTimeFrameAsync(health.TimeFrame); }">@health.TimeFrame</a></td>
                                         }
-                                        <td><a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a></td>
+                                        <td>
+                                            <a href="javascript:void(0);" @onclick="() => OpenEdit(health.Student)"><i class="edit icon"></i></a>
+                                            <a href="javascript:void(0);" @onclick="async () => { await SetStudentAsync(health.Student); }">@health.Student.Account</a>
+                                        </td>
                                         <td>@health.Student.Name</td>
 
                                         @if (string.IsNullOrWhiteSpace(health.Student.Hash))
@@ -209,13 +214,13 @@
                                             if (!ShowInfected)
                                             {
                                                 <td colspan="14">
-                                                    報告者IDが未登録のユーザー
+                                                    報告者IDが未登録
                                                 </td>
                                             }
                                             else
                                             {
                                                 <td colspan="18">
-                                                    報告者IDが未登録のユーザー
+                                                    報告者IDが未登録
                                                 </td>
                                             }
                                         }
@@ -541,14 +546,136 @@
                     </div>
                 </div>
             </div>
+
+
         }
     </Authorized>
 </AuthorizeView>
 
 
+@if (Allowed)
+{
+    <div class="ui modal" id="student-edit-form">
+        <div class="header">編集</div>
+        <div class="content">
+            <EditForm EditContext="@EditContext" OnSubmit="@Submit">
+                <DataAnnotationsValidator />
+                <div class="ui form">
+                    <div class="field">
+                        <label>観察対象者番号</label>
+                        <p>@EdittingModel.Account</p>
+                    </div>
+                    <div class="field">
+                        <label>名前</label>
+                        <InputText @bind-Value="@EdittingModel.Name" />
+                        <ValidationMessage For="@(() => EdittingModel.Name)" />
+                    </div>
+                    <div class="field">
+                        <label>報告者ID</label>
+                        <InputText @bind-Value="@EdittingModel.Hash" />
+                        <ValidationMessage For="@(() => EdittingModel.Hash)" />
+                    </div>
+                    <div class="field">
+                        <label>タグ</label>
+                        この対観察象者に付与するタグを半角スペース区切りで記述してください.
+                        <InputTextArea @bind-Value="@EdittingModel.Tags" />
+                        <ValidationMessage For="@(() => EdittingModel.Tags)" />
+                    </div>
+                    <div class="content">
+                        <div class="actions">
+                            <div class="ui red cancel inverted button"><i class="remove icon"></i>Cancel</div>
+                            <button type="submit" class="ui green inverted button"><i class="checkmark icon"></i>OK</button>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+}
 
 @code
 {
+    public CourseDetails()
+    {
+        EditContext = new EditContext(EdittingModel);
+        messageStore = new ValidationMessageStore(EditContext);
+        EditContext.OnValidationRequested += (s, e) => messageStore.Clear();
+        EditContext.OnFieldChanged += (s, e) => messageStore.Clear(e.FieldIdentifier);
+        ErrorMessage = null;
+    }
+
+    protected string FormErrorMessage { get; set; }
+    protected string FormErrorSubject { get; set; }
+    protected Student EdittingModel { get; set; } = new Student();
+    protected Student BeforeModel = null;
+    private ValidationMessageStore messageStore;
+    protected EditContext EditContext { get; set; }
+    protected async Task OpenEdit(Student beforeModel)
+    {
+        BeforeModel = beforeModel;
+        EdittingModel = beforeModel.GetEntityForEditOrRemove(DB.Context, Config);
+        if (EdittingModel == null)
+        {
+            FormErrorSubject = "Error";
+            FormErrorMessage = "Not found the entity";
+            return;
+        }
+        EditContext = new EditContext(EdittingModel);
+        messageStore = new ValidationMessageStore(EditContext);
+        EditContext.OnValidationRequested += (s, e) => messageStore.Clear();
+        EditContext.OnFieldChanged += (s, e) => messageStore.Clear(e.FieldIdentifier);
+        FormErrorMessage = null;
+
+        await OpenEditDialog();
+    }
+    public async Task OpenEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#student-edit-form", "show");
+    public async Task CloseEditDialog() => await JS.InvokeVoidAsync("modalControl", $".ui.modal#student-edit-form", "hide");
+    protected async Task Submit()
+    {
+        var v1 = true;// EditContext.Validate();
+        var v2 = EdittingModel.ServerSideValidationOnUpdate(DB.Context, Config, AddValidationError);
+        if (v1 && v2)
+        {
+            await OnValidAsync(EditContext);
+        }
+    }
+    protected void AddValidationError(string fieldName, string errorMessage)
+    {
+        messageStore.Add(EditContext.Field(fieldName), errorMessage);
+        EditContext.NotifyValidationStateChanged();
+    }
+    protected virtual async Task OnValidAsync(EditContext editContext)
+    {
+        await InvokeAsync(() => StateHasChanged());
+        await CloseEditDialog();
+        try
+        {
+            var previous = EdittingModel.GetEntityAsNoTracking(DB.Context, Config);
+            try
+            {
+                EdittingModel.Update(DB.Context, Config, previous);
+            }
+            catch (Exception e)
+            {
+                FormErrorSubject = e.Message;
+                FormErrorMessage = e.StackTrace;
+            }
+            DB.Context.SaveChanges();
+            await InvokeAsync(() => StateHasChanged());
+            await InvokeAsync(() => Notifier.Update());
+        }
+        catch (Exception e)
+        {
+            FormErrorMessage = e.Message;
+            Console.Error.WriteLine(e);
+            await CloseEditDialog();
+            return;
+        }
+    }
+
+
+
     [Parameter]
     public string CourseId { get; set; }
     protected int id { get; set; }
@@ -931,4 +1058,4 @@
             StateHasChanged();
         }
     }
-}
+    }

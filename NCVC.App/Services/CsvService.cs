@@ -109,6 +109,16 @@ namespace NCVC.App.Services
                 {
                     var message = await inbox.GetMessageAsync(msg.Index);
                     var received_at = message.Date.DateTime;
+
+                    /*
+                    var md = Regex.Match(message.TextBody, @"KN[0-9]+");
+                    Console.WriteLine($"{md.Success} {message.From.Mailboxes.Count()}");
+                    if(md.Success && message.From.Mailboxes.Count() > 0)
+                    {
+                        Console.WriteLine($"====> {message.From.Mailboxes.First().Address}: {md.Value}");
+                    }
+                    */
+                    
                     foreach (var atc in getAttachments(message))
                     {
                         if (Regex.IsMatch(atc.Item1, "\\.csv$"))

@@ -241,6 +241,7 @@ namespace NCVC.App.Models
         public string Account { get; set; }
         public string Name { get; set; }
         public string Tags { get; set; }
+        public string EmailAddress { get; set; }
 
 
         public string Hash { get; set; } // 報告者IDのこと
